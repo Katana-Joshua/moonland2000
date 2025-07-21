@@ -66,7 +66,7 @@ const DayBook = () => {
             <TableBody>
               {filteredTransactions.map(tx => (
                 <TableRow key={tx.id}>
-                  <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(tx.date).toLocaleString()}</TableCell>
                   <TableCell>{tx.narration}</TableCell>
                   <TableCell>{tx.type}</TableCell>
                   <TableCell className="text-green-400">{tx.debit.account}</TableCell>

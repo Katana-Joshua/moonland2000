@@ -1,6 +1,9 @@
 // API Base URL - change this for production
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Backend URL for image serving - change this for production
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 // Helper function to get auth token
 const getAuthToken = () => {
   const token = localStorage.getItem('moonland_token');
@@ -30,6 +33,14 @@ const setUser = (user) => {
   } else {
     localStorage.removeItem('moonland_user');
   }
+};
+
+// Helper function to build image URL
+const buildImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('data:')) return imagePath;
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${BACKEND_URL}${imagePath}`;
 };
 
 // Generic API request function
@@ -357,6 +368,11 @@ export const posAPI = {
       return response;
     }
   },
+
+  getActiveShift: async (userId) => {
+    const response = await apiRequest(`/pos/shifts/active${userId ? `?userId=${userId}` : ''}`);
+    return response.data;
+  },
 };
 
 // ===== ACCOUNTING API =====
@@ -585,4 +601,7 @@ export default {
   accounting: accountingAPI,
   upload: uploadAPI,
   convert: convertSupabaseData,
-}; 
+};
+
+// Export utility functions
+export { buildImageUrl, BACKEND_URL }; 

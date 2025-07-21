@@ -7,9 +7,10 @@ import { usePOS } from '@/contexts/POSContext';
 import { Plus, Search, Image as ImageIcon, Barcode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
+import { buildImageUrl } from '@/lib/api';
 
 const MenuGrid = () => {
-  const { inventory, addToCart, categories } = usePOS();
+  const { inventory, addToCart, categories, currentShift, endShift } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [barcode, setBarcode] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -45,6 +46,21 @@ const MenuGrid = () => {
 
   return (
     <div className="space-y-6">
+      {currentShift && (
+        <div className="flex justify-end mb-2">
+          <Button
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+            onClick={() => {
+              const endingCash = prompt('Enter ending cash amount to end shift:', '');
+              if (endingCash && !isNaN(Number(endingCash))) {
+                endShift(endingCash);
+              }
+            }}
+          >
+            End Shift
+          </Button>
+        </div>
+      )}
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -86,21 +102,14 @@ const MenuGrid = () => {
                   : 'border-transparent hover:border-amber-700'
               }`}
             >
-              {category.image_url ? (
+              {category.image ? (
                 <img 
-                  src={category.image_url.startsWith('/uploads/') ? `http://localhost:5000${category.image_url}` : category.image_url} 
+                  src={buildImageUrl(category.image)} 
                   alt={category.name} 
+                  loading="lazy"
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.error('Category image failed to load:', category.name, 'URL:', e.target.src);
-                    // Try proxy URL as fallback
-                    if (e.target.src.includes('/uploads/') && !e.target.src.includes('/api/images/')) {
-                      const proxyUrl = e.target.src.replace('/uploads/', '/api/images/');
-                      console.log('Trying proxy URL as fallback:', proxyUrl);
-                      e.target.src = proxyUrl;
-                    } else {
-                      e.target.style.display = 'none';
-                    }
+                    e.target.style.display = 'none';
                   }}
                   onLoad={() => console.log('✅ Cashier category image loaded:', category.name)}
                 />
@@ -137,26 +146,12 @@ const MenuGrid = () => {
                 <div className="aspect-square mb-3 overflow-hidden rounded-lg">
                   {item.image ? (
                     <img
-                      src={item.image.startsWith('data:') ? item.image : 
-                           item.image.startsWith('/uploads/') ? 
-                             (() => {
-                               const directUrl = `http://localhost:5000${item.image}`;
-                               const proxyUrl = `http://localhost:5000/api/images${item.image.replace('/uploads', '')}`;
-                               return directUrl;
-                             })() : 
-                           `data:image/jpeg;base64,${item.image}`}
+                      src={buildImageUrl(item.image)}
                       alt={item.name}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
-                        console.error('Image failed to load for:', item.name, 'URL:', e.target.src);
-                        // Try proxy URL as fallback
-                        if (e.target.src.includes('/uploads/') && !e.target.src.includes('/api/images/')) {
-                          const proxyUrl = e.target.src.replace('/uploads/', '/api/images/');
-                          console.log('Trying proxy URL as fallback:', proxyUrl);
-                          e.target.src = proxyUrl;
-                        } else {
-                          e.target.style.display = 'none';
-                        }
+                        e.target.style.display = 'none';
                       }}
                       onLoad={() => console.log('Cashier image loaded successfully for:', item.name)}
                     />

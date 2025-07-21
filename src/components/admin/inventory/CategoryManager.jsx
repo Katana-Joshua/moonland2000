@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePOS } from '@/contexts/POSContext.jsx';
 import { Edit, Trash2, ImagePlus } from 'lucide-react';
+import { buildImageUrl } from '@/lib/api';
 
 const CategoryManager = () => {
   const { categories, addCategory, removeCategory, updateCategory } = usePOS();
@@ -70,21 +71,14 @@ const CategoryManager = () => {
         {categories.map(cat => (
           <div key={cat.id || cat.name} className="flex items-center justify-between p-3 bg-black/20 rounded-md hover:bg-black/30 transition-colors border border-amber-800/20">
             <div className="flex items-center gap-3">
-              {cat.image_url ? (
+              {cat.image ? (
                 <img 
-                  src={cat.image_url.startsWith('/uploads/') ? `http://localhost:5000${cat.image_url}` : cat.image_url} 
+                  src={buildImageUrl(cat.image)} 
                   alt={cat.name} 
+                  loading="lazy"
                   className="w-12 h-12 rounded-md object-cover border border-amber-800/30"
                   onError={(e) => {
-                    console.error('Category image failed to load:', cat.name, 'URL:', e.target.src);
-                    // Try proxy URL as fallback
-                    if (e.target.src.includes('/uploads/') && !e.target.src.includes('/api/images/')) {
-                      const proxyUrl = e.target.src.replace('/uploads/', '/api/images/');
-                      console.log('Trying proxy URL as fallback:', proxyUrl);
-                      e.target.src = proxyUrl;
-                    } else {
-                      e.target.style.display = 'none';
-                    }
+                    e.target.style.display = 'none';
                   }}
                   onLoad={() => console.log('✅ Category image loaded successfully:', cat.name)}
                 />

@@ -74,7 +74,7 @@ const LedgerManagement = () => {
                 <TableBody>
                   {ledgerData.transactions.length > 0 ? ledgerData.transactions.map((tx, index) => (
                     <TableRow key={`${tx.id}-${index}`}>
-                      <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(tx.date).toLocaleString()}</TableCell>
                       <TableCell>{tx.narration}</TableCell>
                       <TableCell className="text-right text-green-400 font-mono">
                         {tx.debit.account === selectedLedger ? formatCurrency(tx.debit.amount) : '-'}

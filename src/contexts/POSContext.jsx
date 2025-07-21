@@ -88,6 +88,45 @@ export const POSProvider = ({ children }) => {
     fetchData();
   }, [isAuthenticated, user]);
 
+  // Persist currentShift in localStorage on every change
+  useEffect(() => {
+    if (currentShift) {
+      localStorage.setItem('moonland_current_shift', JSON.stringify(currentShift));
+    } else {
+      localStorage.removeItem('moonland_current_shift');
+    }
+  }, [currentShift]);
+
+  // On mount or login, check backend for active shift
+  useEffect(() => {
+    const restoreShift = async () => {
+      if (!isAuthenticated || !user) return;
+      // Check backend for active shift
+      const activeShift = await posAPI.getActiveShift(user.id);
+      if (activeShift) {
+        setCurrentShift(activeShift);
+        localStorage.setItem('moonland_current_shift', JSON.stringify(activeShift));
+      } else {
+        // Fallback: check localStorage (legacy)
+        const saved = localStorage.getItem('moonland_current_shift');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (!parsed.endTime) {
+              setCurrentShift(parsed);
+            } else {
+              localStorage.removeItem('moonland_current_shift');
+            }
+          } catch (e) {
+            localStorage.removeItem('moonland_current_shift');
+          }
+        }
+      }
+    };
+    restoreShift();
+    // eslint-disable-next-line
+  }, [isAuthenticated, user]);
+
   // --- Cart ---
   const addToCart = (item) => {
     setCart(prevCart => {
@@ -119,11 +158,27 @@ export const POSProvider = ({ children }) => {
   };
 
   const updateCartItemPrice = (itemId, newPrice) => {
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === itemId ? { ...item, price: newPrice } : item
-      )
-    );
+    setCart(prevCart => prevCart.map(item => {
+      if (item.id !== itemId) return item;
+      const costPrice = item.costPrice ?? 0;
+      const originalPrice = item.originalPrice ?? item.price;
+      if (newPrice < costPrice) {
+        toast({
+          title: "Invalid Price",
+          description: `The price cannot be lower than the cost price (UGX ${costPrice.toLocaleString()}).`,
+          variant: "destructive"
+        });
+        return item;
+      }
+      if (newPrice < originalPrice) {
+        toast({
+          title: "Warning",
+          description: `You are making a sale below the selling price (UGX ${originalPrice.toLocaleString()}).`,
+          variant: "warning"
+        });
+      }
+      return { ...item, price: newPrice };
+    }));
   };
 
   const clearCart = () => setCart([]);
@@ -152,7 +207,9 @@ export const POSProvider = ({ children }) => {
         profit: profit,
         cashReceived: paymentInfo.cashReceived,
         changeGiven: changeGiven,
-        shiftId: currentShift?.id
+        shiftId: currentShift?.id,
+        userId: user?.id,
+        username: user?.username
       };
 
       console.log('📤 Sending sale data to API:', saleData);
@@ -256,8 +313,8 @@ export const POSProvider = ({ children }) => {
       if (response.success) {
         const shiftSales = sales.filter(sale => new Date(sale.timestamp) >= new Date(currentShift.startTime));
         const totalSales = shiftSales.reduce((sum, sale) => sum + sale.total, 0);
-        
         setCurrentShift(null);
+        localStorage.removeItem('moonland_current_shift');
         toast({ title: "Shift Ended", description: `Total sales: UGX ${totalSales.toLocaleString()}` });
       } else {
         toast({ title: "Error Ending Shift", description: response.message, variant: 'destructive' });
@@ -272,7 +329,15 @@ export const POSProvider = ({ children }) => {
     try {
       const response = await posAPI.addInventoryItem(item);
       if (response.success) {
-        setInventory(prev => [...prev, response.data]);
+        // Refresh the entire inventory to get the complete item data with image
+        const inventoryResponse = await posAPI.getInventory();
+        if (inventoryResponse) {
+          setInventory(inventoryResponse);
+          console.log('✅ Inventory refreshed after adding item');
+        } else {
+          // Fallback: add the item with the response data
+          setInventory(prev => [...prev, response.data]);
+        }
         toast({ title: "Item Added", description: `${item.name} has been added to inventory.` });
         return response.data;
       } else {

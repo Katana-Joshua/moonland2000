@@ -3,17 +3,19 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Trash2, Package, TrendingUp, Barcode } from 'lucide-react';
+import { buildImageUrl } from '@/lib/api';
 
 const InventoryItemCard = ({ item, onEdit, onDelete }) => {
   const profitMargin = item.price && item.costPrice ? ((item.price - item.costPrice) / item.price) * 100 : 0;
 
-  // Debug image data
+    // Debug image data
   console.log('InventoryItemCard - Item:', item.name, 'Image:', item.image ? 'Has image' : 'No image');
   if (item.image) {
-    const imageUrl = item.image.startsWith('data:') ? item.image : 
-                     item.image.startsWith('/uploads/') ? `http://localhost:5000${item.image}` : 
-                     `data:image/jpeg;base64,${item.image}`;
+    const imageUrl = buildImageUrl(item.image);
     console.log('  Image URL:', imageUrl);
+  } else {
+    console.log('  No image URL found for item:', item.name);
+    console.log('  Full item data:', item);
   }
 
   return (
@@ -46,28 +48,13 @@ const InventoryItemCard = ({ item, onEdit, onDelete }) => {
 
         {item.image ? (
           <img
-            src={item.image.startsWith('data:') ? item.image : 
-                 item.image.startsWith('/uploads/') ? 
-                   (() => {
-                     const directUrl = `http://localhost:5000${item.image}`;
-                     const proxyUrl = `http://localhost:5000/api/images${item.image.replace('/uploads', '')}`;
-                     console.log('Trying direct URL:', directUrl);
-                     console.log('Fallback proxy URL:', proxyUrl);
-                     return directUrl;
-                   })() : 
-                 `data:image/jpeg;base64,${item.image}`}
+            src={buildImageUrl(item.image)}
             alt={item.name}
+            loading="lazy"
             className="w-full h-32 object-cover rounded-md mb-3"
             onError={(e) => {
-              console.error('Image failed to load for:', item.name, 'URL:', e.target.src);
-              // Try proxy URL as fallback
-              if (e.target.src.includes('/uploads/') && !e.target.src.includes('/api/images/')) {
-                const proxyUrl = e.target.src.replace('/uploads/', '/api/images/');
-                console.log('Trying proxy URL as fallback:', proxyUrl);
-                e.target.src = proxyUrl;
-              } else {
-                e.target.style.display = 'none';
-              }
+              e.target.style.display = 'none';
+              // Optionally, you can set a state to show a placeholder
             }}
             onLoad={() => console.log('Image loaded successfully for:', item.name)}
           />

@@ -8,6 +8,7 @@ import { usePOS } from '@/contexts/POSContext';
 import { toast } from '@/components/ui/use-toast';
 import { Search, Printer, X } from 'lucide-react';
 import Receipt from '@/components/common/Receipt';
+import { posAPI } from '@/lib/api';
 
 
 const ReprintReceiptModal = ({ isOpen, onClose }) => {
@@ -21,15 +22,22 @@ const ReprintReceiptModal = ({ isOpen, onClose }) => {
     onAfterPrint: () => toast({ title: 'Receipt Printed', description: `Reprinted receipt #${foundSale.receiptNumber}`})
   });
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchQuery) return;
-    const sale = sales.find(s => s.receiptNumber?.toString() === searchQuery.toString());
-    if (sale) {
-      setFoundSale(sale);
-      toast({ title: 'Sale Found', description: `Receipt #${sale.receiptNumber}` });
-    } else {
+    // Fetch the sale from the API by receipt number
+    try {
+      const sales = await posAPI.getSales({ receiptNumber: searchQuery });
+      const sale = Array.isArray(sales) ? sales[0] : sales;
+      if (sale) {
+        setFoundSale(sale);
+        toast({ title: 'Sale Found', description: `Receipt #${sale.receiptNumber}` });
+      } else {
+        setFoundSale(null);
+        toast({ title: 'Not Found', description: 'No sale found with that receipt number.', variant: 'destructive' });
+      }
+    } catch (error) {
       setFoundSale(null);
-      toast({ title: 'Not Found', description: 'No sale found with that receipt number.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to fetch sale from server.', variant: 'destructive' });
     }
   };
   

@@ -105,7 +105,7 @@ const CreditSalesManagement = () => {
                       UGX {customer.totalDebt.toLocaleString()}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {customer.lastSaleDate.toLocaleDateString()}
+                      {customer.lastSaleDate ? new Date(customer.lastSaleDate).toLocaleString() : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

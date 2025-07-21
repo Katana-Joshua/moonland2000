@@ -7,21 +7,41 @@ import { toast } from '@/components/ui/use-toast';
 import { AlertTriangle, Package, ShoppingCart } from 'lucide-react';
 
 const LowStockAlerts = () => {
-  const { getLowStockItems } = usePOS();
+  const { getLowStockItems, updateInventoryItem } = usePOS();
   const lowStockItems = getLowStockItems();
 
   const handleReorder = (item) => {
     toast({
-      title: "Reorder Initiated",
-      description: "🚧 Automatic reordering isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
+      title: "Coming Soon",
+      description: "Reorder with service providers will be available in a future update."
     });
   };
 
-  const handleUpdateStock = (item) => {
-    toast({
-      title: "Quick Stock Update",
-      description: "🚧 Quick stock updates aren't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-    });
+  const handleUpdateStock = async (item) => {
+    const input = prompt(`Enter quantity to add to ${item.name} (current stock: ${item.stock}):`, "0");
+    const qty = parseInt(input, 10);
+    if (isNaN(qty) || qty <= 0) {
+      toast({
+        title: "Invalid Quantity",
+        description: "Please enter a positive number.",
+        variant: "destructive"
+      });
+      return;
+    }
+    const newStock = (item.stock || 0) + qty;
+    try {
+      await updateInventoryItem(item.id, { ...item, stock: newStock });
+      toast({
+        title: "Stock Updated",
+        description: `${qty} units added to ${item.name}. New stock: ${newStock}`
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Could not update stock.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

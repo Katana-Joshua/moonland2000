@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,26 @@ const ShiftManager = () => {
   const { user } = useAuth();
   const [startingCash, setStartingCash] = useState('200.00');
   const [endingCash, setEndingCash] = useState('');
+
+  // Persist currentShift in localStorage
+  useEffect(() => {
+    if (currentShift) {
+      localStorage.setItem('moonland_current_shift', JSON.stringify(currentShift));
+    } else {
+      localStorage.removeItem('moonland_current_shift');
+    }
+  }, [currentShift]);
+
+  // On mount, restore shift if present
+  useEffect(() => {
+    if (!currentShift) {
+      const saved = localStorage.getItem('moonland_current_shift');
+      if (saved) {
+        // You may want to validate the saved data
+        // setCurrentShift(JSON.parse(saved));
+      }
+    }
+  }, []);
 
   const handleStartShift = (e) => {
     e.preventDefault();
@@ -57,15 +77,15 @@ const ShiftManager = () => {
                 </div>
                 <div>
                   <Label className="text-amber-200">Starting Cash Amount</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-amber-400" />
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 top-3 h-4 w-8 text-amber-400 font-bold">UGX</span>
                     <Input
                       type="number"
                       step="0.01"
                       value={startingCash}
                       onChange={(e) => setStartingCash(e.target.value)}
-                      className="pl-10 bg-black/20 border-amber-800/50 text-amber-100"
-                      placeholder="200.00"
+                      className="pl-14 bg-black/20 border-amber-800/50 text-amber-100"
+                      placeholder="e.g. 20000"
                       required
                     />
                   </div>
@@ -120,14 +140,14 @@ const ShiftManager = () => {
             <form onSubmit={handleEndShift} className="space-y-4">
               <div>
                 <Label className="text-amber-200">Ending Cash Amount</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-amber-400" />
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 top-3 h-4 w-8 text-amber-400 font-bold">UGX</span>
                   <Input
                     type="number"
                     step="0.01"
                     value={endingCash}
                     onChange={(e) => setEndingCash(e.target.value)}
-                    className="pl-10 bg-black/20 border-amber-800/50 text-amber-100"
+                    className="pl-14 bg-black/20 border-amber-800/50 text-amber-100"
                     placeholder="Enter ending cash amount"
                     required
                   />
