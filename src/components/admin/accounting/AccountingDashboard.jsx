@@ -10,7 +10,7 @@ import StockValuation from './StockValuation';
 import ReceivablesPayables from './ReceivablesPayables';
 import VoucherEntry from './VoucherEntry';
 import DailyClosingReport from './DailyClosingReport';
-import BankAndCashBook from './BankAndCashBook';
+import BankAndCashBook from './BankAndCashBook'; 
 import ChartOfAccounts from './ChartOfAccounts';
 
 const AccountingDashboard = () => {
