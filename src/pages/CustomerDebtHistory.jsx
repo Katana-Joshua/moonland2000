@@ -118,7 +118,7 @@ const CustomerDebtHistory = () => {
                         transition={{ delay: index * 0.05 }}
                         className="border-b border-amber-800/30"
                       >
-                        <TableCell>{new Date(sale.timestamp).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(sale.timestamp).toLocaleDateString('en-US', { timeZone: 'Africa/Kampala' })}</TableCell>
                         <TableCell className="font-semibold">{sale.receiptNumber}</TableCell>
                         <TableCell className="text-right font-bold">UGX {sale.total.toLocaleString()}</TableCell>
                         <TableCell className="text-center">

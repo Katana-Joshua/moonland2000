@@ -72,7 +72,7 @@ export const generatePDF = (sales, expenses) => {
     const salesBody = safeSales.flatMap(sale => {
       const statusStyle = sale.status === 'unpaid' ? { textColor: [231, 76, 60] } : { textColor: [39, 174, 96] };
       const mainRow = [
-        { content: new Date(sale.timestamp || Date.now()).toLocaleString(), styles: { fontStyle: 'bold' } },
+        { content: new Date(sale.timestamp || Date.now()).toLocaleString('en-US', { timeZone: 'Africa/Kampala' }), styles: { fontStyle: 'bold' } },
         { content: sale.receiptNumber || 'N/A', styles: { fontStyle: 'bold' } },
         { content: `UGX ${(sale.total || 0).toLocaleString()}`, styles: { fontStyle: 'bold' } },
         { content: (sale.status || 'unknown').toUpperCase(), styles: { fontStyle: 'bold', ...statusStyle } }

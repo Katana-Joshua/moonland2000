@@ -85,7 +85,7 @@ const ReprintReceiptModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="font-semibold text-amber-100">Sale Found: #{foundSale.receiptNumber}</h3>
-                        <p className="text-sm text-amber-200/80">{new Date(foundSale.timestamp).toLocaleString()}</p>
+                        <p className="text-sm text-amber-200/80">{new Date(foundSale.timestamp).toLocaleString('en-US', { timeZone: 'Africa/Kampala' })}</p>
                     </div>
                      <Button variant="ghost" size="sm" onClick={clearSearch} className="p-1 h-auto text-amber-200 hover:bg-red-950/50">
                         <X className="w-4 h-4" />

@@ -80,7 +80,8 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
+      timeZone: 'Africa/Kampala'
     });
   };
 
@@ -116,7 +117,7 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
         {renderRow('Receipt #:', cleanSale.receiptNumber || 'N/A')}
         {renderRow('Date:', formatDate(cleanSale.timestamp))}
         {renderRow('Cashier:', cleanSale.cashierName || 'N/A')}
-        {renderRow('Time:', new Date(cleanSale.timestamp || Date.now()).toLocaleTimeString())}
+        {renderRow('Time:', new Date(cleanSale.timestamp || Date.now()).toLocaleTimeString('en-US', { timeZone: 'Africa/Kampala' }))}
       </div>
 
       {isDuplicate && (

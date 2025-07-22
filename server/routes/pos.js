@@ -577,8 +577,8 @@ router.post('/sales', [
       timestamp // Accept timestamp from frontend
     } = req.body;
 
-    // Use provided timestamp (Kampala time) or fallback to server time
-    const saleTimestamp = timestamp || new Date().toLocaleString('sv-SE', { timeZone: 'Africa/Kampala' });
+    // Always use UTC ISO string for sale timestamp
+    const saleTimestamp = timestamp || new Date().toISOString();
 
     console.log('📊 Sale calculations:', { total, totalCost, profit, cashReceived, changeGiven });
 

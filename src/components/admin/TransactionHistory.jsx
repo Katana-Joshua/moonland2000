@@ -95,7 +95,7 @@ const TransactionHistory = () => {
                       className="border-b border-amber-800/30"
                     >
                       <TableCell className="font-semibold">{sale.receiptNumber}</TableCell>
-                      <TableCell>{new Date(sale.timestamp).toLocaleString()}</TableCell>
+                      <TableCell>{new Date(sale.timestamp).toLocaleString('en-US', { timeZone: 'Africa/Kampala' })}</TableCell>
                       <TableCell>{sale.customerInfo?.name || 'N/A'}</TableCell>
                       <TableCell className="text-right font-bold">UGX {sale.total.toLocaleString()}</TableCell>
                       <TableCell className="text-center">

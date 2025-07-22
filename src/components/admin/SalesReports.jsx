@@ -114,7 +114,7 @@ const SalesReports = () => {
                     <div>
                       <p className="font-semibold text-amber-100">Receipt #{sale.receiptNumber || 'N/A'}</p>
                       <p className="text-sm text-amber-200/80">
-                        {new Date(sale.timestamp || Date.now()).toLocaleString()}
+                        {new Date(sale.timestamp || Date.now()).toLocaleString('en-US', { timeZone: 'Africa/Kampala' })}
                       </p>
                     </div>
                     <div className="text-right">
