@@ -6,11 +6,13 @@ import { Plus, FolderPlus } from 'lucide-react';
 import InventoryForm from '@/components/admin/inventory/InventoryForm';
 import CategoryManager from '@/components/admin/inventory/CategoryManager';
 import InventoryList from '@/components/admin/inventory/InventoryList';
+import { Input } from '@/components/ui/input';
 
 const InventoryManagement = () => {
   const { addInventoryItem } = usePOS();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleAdd = async (formData) => {
     const result = await addInventoryItem(formData);
@@ -59,8 +61,19 @@ const InventoryManagement = () => {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="flex mb-4">
+        <Input
+          type="search"
+          placeholder="Search inventory items..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="w-full max-w-md bg-black/20 border-amber-800/50 text-amber-100 placeholder:text-amber-300/50"
+        />
+      </div>
+
       {/* Inventory Grid */}
-      <InventoryList />
+      <InventoryList searchTerm={searchTerm} />
     </div>
   );
 };

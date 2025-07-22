@@ -5,7 +5,7 @@ import { usePOS } from '@/contexts/POSContext.jsx';
 import InventoryItemCard from './InventoryItemCard';
 import InventoryForm from './InventoryForm';
 
-const InventoryList = () => {
+const InventoryList = ({ searchTerm = '' }) => {
   const { inventory, updateInventoryItem, deleteInventoryItem } = usePOS();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -27,10 +27,19 @@ const InventoryList = () => {
     }
   };
 
+  // Filter inventory by search term
+  const filteredInventory = inventory.filter(item => {
+    const term = searchTerm.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(term) ||
+      (item.description && item.description.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {inventory.map((item, index) => (
+        {filteredInventory.map((item, index) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, y: 20 }}

@@ -101,7 +101,9 @@ const CashierDashboard = () => {
               <div>
                 <p className="text-xs sm:text-sm text-amber-200/80">Shift Started</p>
                 <p className="font-semibold text-amber-100 text-sm sm:text-base">
-                  {new Date(currentShift.startTime).toLocaleTimeString()}
+                  {currentShift.startTime && !isNaN(new Date(currentShift.startTime))
+                    ? new Date(currentShift.startTime).toLocaleTimeString('en-US', { timeZone: 'Africa/Kampala' })
+                    : 'N/A'}
                 </p>
               </div>
             </div>

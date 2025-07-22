@@ -128,7 +128,9 @@ const ShiftManager = () => {
               <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
                 <p className="text-sm text-amber-200/80">Shift Started</p>
                 <p className="font-semibold text-amber-100">
-                  {new Date(currentShift.startTime).toLocaleString()}
+                  {currentShift.startTime && !isNaN(new Date(currentShift.startTime))
+                    ? new Date(currentShift.startTime).toLocaleString('en-US', { timeZone: 'Africa/Kampala' })
+                    : 'N/A'}
                 </p>
               </div>
               <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
