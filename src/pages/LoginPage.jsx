@@ -32,7 +32,7 @@ const LoginPage = () => {
     setIsLoggingIn(true); 
 
     try {
-      const result = await login(username, password);
+      const result = await login(username, password); 
       if (result.success && result.user) {
         if (result.user.role === 'admin') {
           navigate('/admin');
