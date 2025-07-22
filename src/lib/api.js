@@ -1,8 +1,8 @@
 // API Base URL - change this for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://web-production-3f97.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://web-production-83ab9.up.railway.app/api';
 
 // Backend URL for image serving - change this for production
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://web-production-3f97.up.railway.app';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://web-production-83ab9.up.railway.app';
 
 // Helper function to get auth token
 const getAuthToken = () => {
