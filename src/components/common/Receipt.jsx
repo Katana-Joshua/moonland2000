@@ -36,14 +36,15 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
     width: '80mm',
     maxWidth: '80mm',
     fontFamily: '"Courier New", Courier, monospace',
-    fontSize: '11px',
+    fontSize: '12px', // Increased from 11px
     color: '#000',
     backgroundColor: '#fff',
     padding: '12px 8px',
-    fontWeight: 'bold',
-    lineHeight: '1.3',
+    fontWeight: '900', // Changed from 'bold' to maximum boldness
+    lineHeight: '1.4', // Increased from 1.3
     textAlign: 'center',
     margin: '0 auto',
+    textShadow: '0.3px 0.3px 0px #000', // Added text shadow for enhanced boldness
   };
 
   const headerStyle = {
@@ -56,7 +57,7 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
     margin: '8px 0',
   };
 
-  const line = <div style={{ borderTop: '1px dashed #333', margin: '8px 0' }}></div>;
+  const line = <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>; // Changed from #333 to #000
 
   const renderRow = (left, right, isBold = true) => (
     <div style={{
@@ -64,8 +65,9 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
       justifyContent: 'space-between',
       alignItems: 'center',
       margin: '3px 0',
-      fontWeight: isBold ? 'bold' : 'bold',
-      fontSize: '11px',
+      fontWeight: '900', // Changed from 'bold' to maximum boldness
+      fontSize: '12px', // Increased from 11px
+      textShadow: '0.3px 0.3px 0px #000', // Added text shadow
     }}>
       <span style={{ textAlign: 'left', flex: '1' }}>{left}</span>
       <span style={{ textAlign: 'right', flex: '1' }}>{right}</span>
@@ -89,24 +91,25 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
     <div ref={ref} style={receiptStyle}>
       {/* Header */}
       <div style={headerStyle}>
-        <Rocket style={{ 
-          margin: '0 auto 6px auto', 
-          display: 'block', 
-          width: '28px', 
-          height: '28px',
+        <Rocket style={{
+          margin: '0 auto 6px auto',
+          display: 'block',
+          width: '32px', // Increased from 28px
+          height: '32px', // Increased from 28px
           color: '#2563eb'
         }} />
-        <h2 style={{ 
-          fontSize: '18px', 
+        <h2 style={{
+          fontSize: '20px', // Increased from 18px
           margin: '0 0 4px 0',
-          fontWeight: 'bold',
-          color: '#1f2937'
+          fontWeight: '900', // Changed from 'bold'
+          color: '#000', // Changed from '#1f2937' for higher contrast
+          textShadow: '0.5px 0.5px 0px #000', // Added text shadow
         }}>MOON LAND POS</h2>
-        <p style={{ 
-          fontSize: '10px', 
+        <p style={{
+          fontSize: '12px', // Increased from 10px
           margin: '0',
-          color: '#6b7280',
-          fontWeight: 'bold'
+          color: '#000', // Changed from '#6b7280' for higher contrast
+          fontWeight: '900' // Changed from 'bold'
         }}>Point of Sale System</p>
       </div>
 
@@ -121,29 +124,30 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
       </div>
 
       {isDuplicate && (
-        <div style={{ 
-          margin: '8px 0', 
-          fontWeight: 'bold', 
-          fontSize: '10px',
+        <div style={{
+          margin: '8px 0',
+          fontWeight: '900', // Changed from 'bold'
+          fontSize: '12px', // Increased from 10px
           color: '#dc2626',
-          textAlign: 'center'
+          textAlign: 'center',
+          textShadow: '0.3px 0.3px 0px #000', // Added text shadow
         }}>
           --- DUPLICATE RECEIPT ---
         </div>
       )}
 
       {cleanSale.paymentMethod === 'credit' && cleanSale.customerInfo?.name && (
-        <div style={{ 
-          margin: '8px 0', 
-          padding: '6px', 
-          border: '1px dashed #333',
+        <div style={{
+          margin: '8px 0',
+          padding: '6px',
+          border: '1px dashed #000', // Changed from #333
           borderRadius: '4px',
           backgroundColor: '#f9fafb'
         }}>
-          <p style={{margin: '0 0 3px 0', fontWeight: 'bold', fontSize: '10px', color: '#dc2626'}}>CREDIT SALE FOR:</p>
-          <p style={{margin: 0, fontWeight: 'bold', fontSize: '11px'}}>{cleanSale.customerInfo.name}</p>
+          <p style={{margin: '0 0 3px 0', fontWeight: '900', fontSize: '12px', color: '#dc2626', textShadow: '0.3px 0.3px 0px #000'}}>CREDIT SALE FOR:</p>
+          <p style={{margin: 0, fontWeight: '900', fontSize: '13px', textShadow: '0.3px 0.3px 0px #000'}}>{cleanSale.customerInfo.name}</p>
                       {cleanSale.customerInfo.contact && (
-              <p style={{margin: '2px 0 0 0', fontSize: '9px', color: '#6b7280', fontWeight: 'bold'}}>{cleanSale.customerInfo.contact}</p>
+              <p style={{margin: '2px 0 0 0', fontSize: '11px', color: '#000', fontWeight: '900'}}>{cleanSale.customerInfo.contact}</p>
             )}
         </div>
       )}
@@ -157,10 +161,11 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
           gridTemplateColumns: '2fr 1fr 1.5fr 1.5fr',
           gap: '4px',
           marginBottom: '6px',
-          fontWeight: 'bold',
-          fontSize: '10px',
-          color: '#374151',
-          textAlign: 'center'
+          fontWeight: '900', // Changed from 'bold'
+          fontSize: '12px', // Increased from 10px
+          color: '#000', // Changed from '#374151' for higher contrast
+          textAlign: 'center',
+          textShadow: '0.3px 0.3px 0px #000', // Added text shadow
         }}>
           <span>ITEM</span>
           <span>QTY</span>
@@ -175,14 +180,14 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
             gridTemplateColumns: '2fr 1fr 1.5fr 1.5fr',
             gap: '4px',
             margin: '4px 0',
-            fontSize: '10px',
+            fontSize: '12px', // Increased from 10px
             textAlign: 'center',
             alignItems: 'center'
           }}>
-            <span style={{ textAlign: 'left', fontWeight: 'bold' }}>{item.name}</span>
-            <span style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
-            <span style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(item.price)}</span>
-            <span style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(item.price * item.quantity)}</span>
+            <span style={{ textAlign: 'left', fontWeight: '900', textShadow: '0.3px 0.3px 0px #000' }}>{item.name}</span>
+            <span style={{ textAlign: 'center', fontWeight: '900' }}>{item.quantity}</span>
+            <span style={{ textAlign: 'right', fontWeight: '900' }}>{formatCurrency(item.price)}</span>
+            <span style={{ textAlign: 'right', fontWeight: '900' }}>{formatCurrency(item.price * item.quantity)}</span>
           </div>
         ))}
       </div>
@@ -198,11 +203,12 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           margin: '6px 0',
-          fontWeight: 'bold',
-          fontSize: '12px',
-          color: '#1f2937',
-          borderTop: '1px solid #333',
-          paddingTop: '4px'
+          fontWeight: '900', // Changed from 'bold'
+          fontSize: '14px', // Increased from 12px
+          color: '#000', // Changed from '#1f2937' for higher contrast
+          borderTop: '1px solid #000', // Changed from '#333' for higher contrast
+          paddingTop: '4px',
+          textShadow: '0.5px 0.5px 0px #000', // Added text shadow
         }}>
           <span>TOTAL:</span>
           <span>{formatCurrency(total)}</span>
@@ -224,43 +230,45 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
 
       {/* Footer */}
       <div style={{ marginTop: '8px', textAlign: 'center' }}>
-        <p style={{ 
-          margin: '0 0 6px 0', 
-          fontWeight: 'bold', 
-          fontSize: '11px',
-          color: '#1f2937'
+        <p style={{
+          margin: '0 0 6px 0',
+          fontWeight: '900', // Changed from 'bold'
+          fontSize: '13px', // Increased from 11px
+          color: '#000', // Changed from '#1f2937' for higher contrast
+          textShadow: '0.3px 0.3px 0px #000', // Added text shadow
         }}>
           Payment: {(cleanSale.paymentMethod || 'Unknown').toUpperCase()}
         </p>
-        <p style={{ 
-          margin: '0 0 8px 0', 
-          fontSize: '10px',
-          color: '#6b7280',
-          fontWeight: 'bold'
+        <p style={{
+          margin: '0 0 8px 0',
+          fontSize: '12px', // Increased from 10px
+          color: '#000', // Changed from '#6b7280' for higher contrast
+          fontWeight: '900' // Changed from 'bold'
         }}>Thank you for your visit!</p>
         
-        <div style={{ 
+        <div style={{
           marginTop: '10px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center'
         }}>
-          <QRCode 
-            value={`SALE_ID:${cleanSale.id}|RECEIPT:${cleanSale.receiptNumber}`} 
-            size={50} 
-            style={{ margin: 'auto' }} 
+          <QRCode
+            value={`SALE_ID:${cleanSale.id}|RECEIPT:${cleanSale.receiptNumber}`}
+            size={60} // Increased from 50
+            style={{ margin: 'auto' }}
           />
-          <p style={{ 
-            fontSize: '9px', 
-            margin: '4px 0 0 0', 
-            fontWeight: 'bold',
-            color: '#6b7280'
+          <p style={{
+            fontSize: '11px', // Increased from 9px
+            margin: '4px 0 0 0',
+            fontWeight: '900', // Changed from 'bold'
+            color: '#000', // Changed from '#6b7280' for higher contrast
+            textShadow: '0.3px 0.3px 0px #000', // Added text shadow
           }}>Scan for details</p>
-          <p style={{ 
-            fontSize: '9px', 
-            margin: '2px 0 0 0', 
-            fontWeight: 'bold',
-            color: '#9ca3af'
+          <p style={{
+            fontSize: '11px', // Increased from 9px
+            margin: '2px 0 0 0',
+            fontWeight: '900', // Changed from 'bold'
+            color: '#000', // Changed from '#9ca3af' for higher contrast
           }}>Moon Land POS System</p>
         </div>
       </div>
