@@ -4,10 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig = {
-  host: process.env.DB_HOST || 'srv1943.hstgr.io',
-  user: process.env.DB_USER || 'u407655108_katana01',
-  password: process.env.DB_PASSWORD || 'Katana@2025@',
-  database: process.env.DB_NAME || 'u407655108_pos',
+  host: process.env.DB_HOST || '',
+  user: process.env.DB_USER || '',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || '',
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,

@@ -47,9 +47,6 @@ const SalesReports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filter Controls */}
-      <SalesReportFilter onFilter={handleFilter} />
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <Card className="glass-effect border-amber-800/50">
@@ -80,6 +77,9 @@ const SalesReports = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Filter Controls */}
+      <SalesReportFilter onFilter={handleFilter} />
 
       {/* Actions */}
       <div className="flex gap-4">

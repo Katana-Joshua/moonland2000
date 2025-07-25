@@ -6,13 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePOS } from '@/contexts/POSContext.jsx';
 import { toast } from '@/components/ui/use-toast';
-import { Calendar, Search, RotateCcw, Filter, Hash } from 'lucide-react';
+import { Calendar, Search, RotateCcw, Filter, Hash, Clock } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker.jsx';
+import { TimeInput } from '@/components/ui/timeinput.jsx';
 
 const SalesReportFilter = ({ onFilter }) => {
   const { sales, expenses } = usePOS();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [startTime, setStartTime] = useState('00:00');
+  const [endTime, setEndTime] = useState('23:59');
   const [paymentMethod, setPaymentMethod] = useState('all');
   const [receiptNumber, setReceiptNumber] = useState('');
 
@@ -34,18 +37,28 @@ const SalesReportFilter = ({ onFilter }) => {
       return;
     }
 
-    // Date filter
+    // Date and time filter
     let startDateTime = null;
     let endDateTime = null;
 
     if (startDate) {
       startDateTime = new Date(startDate);
-      startDateTime.setHours(0, 0, 0, 0);
+      if (startTime) {
+        const [hours, minutes] = startTime.split(':').map(Number);
+        startDateTime.setHours(hours, minutes, 0, 0);
+      } else {
+        startDateTime.setHours(0, 0, 0, 0);
+      }
     }
 
     if (endDate) {
       endDateTime = new Date(endDate);
-      endDateTime.setHours(23, 59, 59, 999);
+      if (endTime) {
+        const [hours, minutes] = endTime.split(':').map(Number);
+        endDateTime.setHours(hours, minutes, 59, 999);
+      } else {
+        endDateTime.setHours(23, 59, 59, 999);
+      }
     }
     
     if (startDateTime && endDateTime && startDateTime > endDateTime) {
@@ -90,6 +103,8 @@ const SalesReportFilter = ({ onFilter }) => {
   const clearFilters = () => {
     setStartDate(null);
     setEndDate(null);
+    setStartTime('00:00');
+    setEndTime('23:59');
     setPaymentMethod('all');
     setReceiptNumber('');
     onFilter({ sales, expenses });
@@ -128,10 +143,48 @@ const SalesReportFilter = ({ onFilter }) => {
           <div className="space-y-2">
             <Label className="text-amber-200 flex items-center">
               <Calendar className="w-4 h-4 mr-2" />
-              Date Range
+              Date & Time Range
             </Label>
-            <DatePicker date={startDate} setDate={setStartDate} placeholder="Start Date"/>
-            <DatePicker date={endDate} setDate={setEndDate} placeholder="End Date"/>
+            <div className="grid grid-cols-1 gap-2">
+              <div>
+                <Label className="text-amber-200/80 text-xs mb-1 block">Start Date</Label>
+                <DatePicker date={startDate} setDate={setStartDate} placeholder="Start Date"/>
+              </div>
+              <div>
+                <Label className="text-amber-200/80 text-xs mb-1 block flex items-center">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Start Time
+                </Label>
+                <TimeInput
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  placeholder="Start Time"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-amber-200 flex items-center">
+              <Calendar className="w-4 h-4 mr-2" />
+              End Range
+            </Label>
+            <div className="grid grid-cols-1 gap-2">
+              <div>
+                <Label className="text-amber-200/80 text-xs mb-1 block">End Date</Label>
+                <DatePicker date={endDate} setDate={setEndDate} placeholder="End Date"/>
+              </div>
+              <div>
+                <Label className="text-amber-200/80 text-xs mb-1 block flex items-center">
+                  <Clock className="w-3 h-3 mr-1" />
+                  End Time
+                </Label>
+                <TimeInput
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  placeholder="End Time"
+                />
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-amber-200">Payment Method</Label>
