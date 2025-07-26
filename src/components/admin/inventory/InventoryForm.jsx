@@ -8,7 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 
 const InventoryForm = ({ item, onSubmit, onCancel }) => {
   const { categories } = usePOS();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ 
     name: '',
     description: '',
     category: '',
