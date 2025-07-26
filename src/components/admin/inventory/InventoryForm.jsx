@@ -82,7 +82,7 @@ const InventoryForm = ({ item, onSubmit, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 w-full px-1">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-amber-200">Name *</Label>
@@ -184,11 +184,11 @@ const InventoryForm = ({ item, onSubmit, onCancel }) => {
           <img src={previewImage} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-md" />
         )}
       </div>
-      <div className="flex gap-2">
-        <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
+      <div className="flex flex-wrap gap-2 mt-6">
+        <Button type="submit" className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto">
           {item ? "Update Item" : "Add Item"}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
       </div>
