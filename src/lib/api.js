@@ -373,6 +373,20 @@ export const posAPI = {
     const response = await apiRequest(`/pos/shifts/active${userId ? `?userId=${userId}` : ''}`);
     return response.data;
   },
+
+  // Receipt Settings
+  getReceiptSettings: async () => {
+    const response = await apiRequest('/pos/receipt-settings');
+    return response.data;
+  },
+
+  updateReceiptSettings: async (settings) => {
+    const response = await apiRequest('/pos/receipt-settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return response;
+  },
 };
 
 // ===== ACCOUNTING API =====

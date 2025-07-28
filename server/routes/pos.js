@@ -1582,4 +1582,97 @@ router.delete('/staff/:id', async (req, res) => {
   }
 });
 
+// ===== RECEIPT SETTINGS ROUTES =====
+
+// Get receipt settings
+router.get('/receipt-settings', authenticateToken, async (req, res) => {
+  try {
+    const result = await executeQuery('SELECT * FROM receipt_settings LIMIT 1');
+    
+    if (result.success && result.data.length > 0) {
+      res.json({
+        success: true,
+        data: result.data[0]
+      });
+    } else {
+      // Return default settings if none exist
+      const defaultSettings = {
+        logo: null,
+        companyName: 'Moon Land',
+        address: '123 Cosmic Way, Galaxy City',
+        phone: '+123 456 7890',
+        footer: 'Thank you for your business!'
+      };
+      
+      res.json({
+        success: true,
+        data: defaultSettings
+      });
+    }
+  } catch (error) {
+    console.error('Get receipt settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Update receipt settings
+router.put('/receipt-settings', authenticateToken, async (req, res) => {
+  try {
+    const { logo, companyName, address, phone, footer } = req.body;
+    
+    // Validate required fields
+    if (!companyName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company name is required'
+      });
+    }
+
+    // Check if settings exist
+    const existingSettings = await executeQuery('SELECT COUNT(*) as count FROM receipt_settings');
+    
+    if (existingSettings.success && existingSettings.data[0].count > 0) {
+      // Update existing settings
+      const result = await executeQuery(`
+        UPDATE receipt_settings 
+        SET logo = ?, company_name = ?, address = ?, phone = ?, footer = ?, updated_at = NOW()
+        WHERE id = (SELECT id FROM receipt_settings LIMIT 1)
+      `, [logo, companyName, address, phone, footer]);
+      
+      if (!result.success) {
+        throw new Error('Failed to update receipt settings');
+      }
+    } else {
+      // Create new settings
+      const result = await executeQuery(`
+        INSERT INTO receipt_settings (logo, company_name, address, phone, footer, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+      `, [logo, companyName, address, phone, footer]);
+      
+      if (!result.success) {
+        throw new Error('Failed to create receipt settings');
+      }
+    }
+
+    // Get updated settings
+    const updatedSettings = await executeQuery('SELECT * FROM receipt_settings LIMIT 1');
+    
+    res.json({
+      success: true,
+      data: updatedSettings.data[0],
+      message: 'Receipt settings updated successfully'
+    });
+    
+  } catch (error) {
+    console.error('Update receipt settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 export default router; 

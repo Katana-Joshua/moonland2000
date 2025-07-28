@@ -45,12 +45,13 @@ export const POSProvider = ({ children }) => {
         console.log('Fetching data from database...');
         
         // Fetch all data in parallel
-        const [inventoryData, salesData, expensesData, staffData, categoriesData] = await Promise.all([
+        const [inventoryData, salesData, expensesData, staffData, categoriesData, receiptSettingsData] = await Promise.all([
           posAPI.getInventory(),
           posAPI.getSales(),
           posAPI.getExpenses(),
           posAPI.getStaff(),
-          posAPI.getCategories()
+          posAPI.getCategories(),
+          posAPI.getReceiptSettings().catch(() => null) // Fallback if endpoint doesn't exist yet
         ]);
 
         console.log('Data fetched:', {
@@ -58,7 +59,8 @@ export const POSProvider = ({ children }) => {
           sales: salesData,
           expenses: expensesData,
           staff: staffData,
-          categories: categoriesData
+          categories: categoriesData,
+          receiptSettings: receiptSettingsData
         });
 
         // Debug inventory items with images
@@ -79,6 +81,11 @@ export const POSProvider = ({ children }) => {
         })));
         setStaff(staffData || []);
         setCategories(categoriesData || []);
+        
+        // Set receipt settings if available, otherwise use defaults
+        if (receiptSettingsData) {
+          setReceiptSettings(receiptSettingsData);
+        }
 
       } catch (error) {
         console.error('Error fetching POS data:', error);
@@ -521,9 +528,21 @@ export const POSProvider = ({ children }) => {
   };
 
   // --- Receipt Settings ---
-  const updateReceiptSettings = (newSettings) => {
-    setReceiptSettings(prev => ({ ...prev, ...newSettings }));
-    toast({ title: "Settings Updated", description: "Receipt settings have been saved." });
+  const updateReceiptSettings = async (newSettings) => {
+    try {
+      const response = await posAPI.updateReceiptSettings(newSettings);
+      if (response.success) {
+        setReceiptSettings(response.data);
+        toast({ title: "Settings Updated", description: "Receipt settings have been saved." });
+        return true;
+      } else {
+        toast({ title: "Error updating settings", description: response.message, variant: 'destructive' });
+        return false;
+      }
+    } catch (error) {
+      toast({ title: "Error updating settings", description: error.message, variant: 'destructive' });
+      return false;
+    }
   };
 
   const value = {

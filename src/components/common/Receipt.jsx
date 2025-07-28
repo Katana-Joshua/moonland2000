@@ -3,8 +3,11 @@ import React from 'react';
 import { Rocket } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import { formatCurrency } from '@/lib/utils';
+import { usePOS } from '@/contexts/POSContext';
 
 const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
+  const { receiptSettings } = usePOS();
+  
   if (!sale) return null;
 
   // Ensure sale data is clean and serializable
@@ -91,20 +94,50 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
     <div ref={ref} style={receiptStyle}>
       {/* Header */}
       <div style={headerStyle}>
-        <Rocket style={{
-          margin: '0 auto 6px auto',
-          display: 'block',
-          width: '32px', // Increased from 28px
-          height: '32px', // Increased from 28px
-          color: '#2563eb'
-        }} />
+        {receiptSettings.logo ? (
+          <img 
+            src={receiptSettings.logo} 
+            alt="Company Logo" 
+            style={{
+              margin: '0 auto 6px auto',
+              display: 'block',
+              width: '32px',
+              height: '32px',
+              objectFit: 'contain'
+            }}
+          />
+        ) : (
+          <Rocket style={{
+            margin: '0 auto 6px auto',
+            display: 'block',
+            width: '32px', // Increased from 28px
+            height: '32px', // Increased from 28px
+            color: '#2563eb'
+          }} />
+        )}
         <h2 style={{
           fontSize: '20px', // Increased from 18px
           margin: '0 0 4px 0',
           fontWeight: '900', // Changed from 'bold'
           color: '#000', // Changed from '#1f2937' for higher contrast
           textShadow: '0.5px 0.5px 0px #000', // Added text shadow
-        }}>MOON LAND POS</h2>
+        }}>{receiptSettings.companyName || 'MOON LAND POS'}</h2>
+        {receiptSettings.address && (
+          <p style={{
+            fontSize: '11px',
+            margin: '0 0 2px 0',
+            color: '#000',
+            fontWeight: '900'
+          }}>{receiptSettings.address}</p>
+        )}
+        {receiptSettings.phone && (
+          <p style={{
+            fontSize: '11px',
+            margin: '0 0 2px 0',
+            color: '#000',
+            fontWeight: '900'
+          }}>{receiptSettings.phone}</p>
+        )}
         <p style={{
           fontSize: '12px', // Increased from 10px
           margin: '0',
@@ -239,6 +272,14 @@ const Receipt = React.forwardRef(({ sale, cart, isDuplicate = false }, ref) => {
         }}>
           Payment: {(cleanSale.paymentMethod || 'Unknown').toUpperCase()}
         </p>
+        {receiptSettings.footer && (
+          <p style={{
+            margin: '0 0 8px 0',
+            fontSize: '12px',
+            color: '#000',
+            fontWeight: '900'
+          }}>{receiptSettings.footer}</p>
+        )}
         <p style={{
           margin: '0 0 8px 0',
           fontSize: '12px', // Increased from 10px

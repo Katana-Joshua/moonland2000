@@ -142,6 +142,18 @@ CREATE TABLE voucher_entries (
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 
+-- Receipt settings table
+CREATE TABLE receipt_settings (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    logo TEXT NULL,
+    company_name VARCHAR(100) NOT NULL DEFAULT 'Moon Land',
+    address TEXT NULL,
+    phone VARCHAR(20) NULL,
+    footer TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert default admin user
 INSERT INTO users (username, password_hash, role) VALUES 
 ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'); -- password: admin123
@@ -167,6 +179,10 @@ INSERT INTO accounts (code, name, type) VALUES
 ('4000', 'Sales Revenue', 'revenue'),
 ('5000', 'Cost of Goods Sold', 'expense'),
 ('6000', 'Operating Expenses', 'expense');
+
+-- Insert default receipt settings
+INSERT INTO receipt_settings (company_name, address, phone, footer) VALUES 
+('Moon Land', '123 Cosmic Way, Galaxy City', '+123 456 7890', 'Thank you for your business!');
 
 -- Create indexes for better performance
 CREATE INDEX idx_sales_timestamp ON sales(timestamp);
