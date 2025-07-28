@@ -60,7 +60,7 @@ const AdminDashboard = () => {
     { id: 'expenses', label: 'Expenses', icon: DollarSign },
     { id: 'shifts', label: 'Shift Log', icon: History },
     { id: 'low-stock', label: 'Low Stock', icon: Box },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Receipt Settings', icon: Settings },
   ];
 
   const handleTabClick = (tabId) => {
