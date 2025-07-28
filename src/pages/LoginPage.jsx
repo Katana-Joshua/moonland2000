@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
-import { User, Lock, Rocket } from 'lucide-react';
+import { User, Lock, Moon } from 'lucide-react';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -61,9 +61,9 @@ const LoginPage = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="mx-auto w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-700 rounded-full flex items-center justify-center"
+              className="mx-auto w-40 h-auto flex items-center justify-center"
             >
-              <Rocket className="w-8 h-8 text-white" />
+              <Moon className="w-24 h-24 text-amber-300" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-amber-100">
               Moon Land POS
@@ -112,7 +112,6 @@ const LoginPage = () => {
                 {isLoggingIn ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
-
           </CardContent>
         </Card>
       </motion.div>

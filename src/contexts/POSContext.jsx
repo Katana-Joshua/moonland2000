@@ -23,6 +23,13 @@ export const POSProvider = ({ children }) => {
   const [currentShift, setCurrentShift] = useState(null);
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [receiptSettings, setReceiptSettings] = useState({
+    logo: null,
+    companyName: 'Moon Land',
+    address: '123 Cosmic Way, Galaxy City',
+    phone: '+123 456 7890',
+    footer: 'Thank you for your business!',
+  });
 
   // Fetch data from database when user is authenticated
   useEffect(() => {
@@ -513,6 +520,12 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  // --- Receipt Settings ---
+  const updateReceiptSettings = (newSettings) => {
+    setReceiptSettings(prev => ({ ...prev, ...newSettings }));
+    toast({ title: "Settings Updated", description: "Receipt settings have been saved." });
+  };
+
   const value = {
     inventory,
     sales,
@@ -522,6 +535,7 @@ export const POSProvider = ({ children }) => {
     staff,
     categories,
     isLoading,
+    receiptSettings,
     addToCart,
     removeFromCart,
     updateCartQuantity,
@@ -542,6 +556,7 @@ export const POSProvider = ({ children }) => {
     addCategory,
     removeCategory,
     updateCategory,
+    updateReceiptSettings,
   };
 
   return (
