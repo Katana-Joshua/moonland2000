@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { usePOS } from '@/contexts/POSContext';
 import { toast } from '@/components/ui/use-toast';
 import { AlertTriangle, Package, ShoppingCart } from 'lucide-react';
+import { buildImageUrl } from '@/lib/api';
 
 const LowStockAlerts = () => {
   const { getLowStockItems, updateInventoryItem } = usePOS();
@@ -80,12 +81,20 @@ const LowStockAlerts = () => {
                   <p className="text-sm text-amber-200/80">{item.category}</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {item.image && (
+                  {item.image ? (
                     <img
-                      src={item.image}
+                      src={buildImageUrl(item.image)}
                       alt={item.name}
+                      loading="lazy"
                       className="w-full h-24 object-cover rounded-md"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
+                  ) : (
+                    <div className="w-full h-24 bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center rounded-md">
+                      <Package className="w-8 h-8 text-amber-500/50" />
+                    </div>
                   )}
                   
                   <div className="space-y-2">
