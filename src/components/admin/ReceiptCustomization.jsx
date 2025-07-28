@@ -12,6 +12,7 @@ const ReceiptCustomization = () => {
   const { receiptSettings, updateReceiptSettings } = usePOS();
   const [settings, setSettings] = useState(receiptSettings);
   const [logoPreview, setLogoPreview] = useState(receiptSettings.logo);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -38,9 +39,22 @@ const ReceiptCustomization = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateReceiptSettings(settings);
+    setIsSaving(true);
+    
+    try {
+      const success = await updateReceiptSettings(settings);
+      if (success) {
+        // Update local state with the new settings from the server
+        setSettings(receiptSettings);
+        setLogoPreview(receiptSettings.logo);
+      }
+    } catch (error) {
+      console.error('Error saving receipt settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -61,9 +75,10 @@ const ReceiptCustomization = () => {
             <Input
               id="companyName"
               name="companyName"
-              value={settings.companyName}
+              value={settings.companyName || ''}
               onChange={handleInputChange}
               className="bg-black/20 border-amber-800/50 text-amber-100"
+              required
             />
           </div>
           <div className="space-y-2">
@@ -71,7 +86,7 @@ const ReceiptCustomization = () => {
             <Input
               id="address"
               name="address"
-              value={settings.address}
+              value={settings.address || ''}
               onChange={handleInputChange}
               className="bg-black/20 border-amber-800/50 text-amber-100"
             />
@@ -81,7 +96,7 @@ const ReceiptCustomization = () => {
             <Input
               id="phone"
               name="phone"
-              value={settings.phone}
+              value={settings.phone || ''}
               onChange={handleInputChange}
               className="bg-black/20 border-amber-800/50 text-amber-100"
             />
@@ -91,9 +106,10 @@ const ReceiptCustomization = () => {
             <Textarea
               id="footer"
               name="footer"
-              value={settings.footer}
+              value={settings.footer || ''}
               onChange={handleInputChange}
               className="bg-black/20 border-amber-800/50 text-amber-100"
+              placeholder="Thank you for your business!"
             />
           </div>
           <div className="space-y-2">
@@ -109,9 +125,9 @@ const ReceiptCustomization = () => {
               <Input id="logo-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleLogoChange} />
             </div>
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isSaving}>
             <Save className="w-4 h-4 mr-2" />
-            Save Settings
+            {isSaving ? 'Saving...' : 'Save Settings'}
           </Button>
         </form>
       </CardContent>
