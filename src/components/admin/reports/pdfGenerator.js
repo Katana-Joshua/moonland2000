@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 export const generatePDF = (sales, expenses) => {
-  // Add safety checks for input parameters
+  // Add safety checks for input parameters in this file
   const safeSales = sales || [];
   const safeExpenses = expenses || [];
   
