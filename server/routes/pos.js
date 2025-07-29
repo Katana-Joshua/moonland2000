@@ -1590,9 +1590,18 @@ router.get('/receipt-settings', authenticateToken, async (req, res) => {
     const result = await executeQuery('SELECT * FROM receipt_settings LIMIT 1');
     
     if (result.success && result.data.length > 0) {
+      // Map database column names to JavaScript property names
+      const mappedData = {
+        logo: result.data[0].logo_data ? `data:image/png;base64,${result.data[0].logo_data.toString('base64')}` : null,
+        companyName: result.data[0].company_name,
+        address: result.data[0].address,
+        phone: result.data[0].phone,
+        footer: result.data[0].footer
+      };
+      
       res.json({
         success: true,
-        data: result.data[0]
+        data: mappedData
       });
     } else {
       // Return default settings if none exist
@@ -1619,9 +1628,9 @@ router.get('/receipt-settings', authenticateToken, async (req, res) => {
 });
 
 // Update receipt settings
-router.put('/receipt-settings', authenticateToken, async (req, res) => {
+router.put('/receipt-settings', authenticateToken, upload.single('logo'), async (req, res) => {
   try {
-    const { logo, companyName, address, phone, footer } = req.body;
+    const { companyName, address, phone, footer } = req.body;
     
     // Validate required fields
     if (!companyName) {
@@ -1631,16 +1640,45 @@ router.put('/receipt-settings', authenticateToken, async (req, res) => {
       });
     }
 
+    // Handle logo upload - store as BLOB
+    let logoData = null;
+    if (req.file) {
+      try {
+        logoData = fs.readFileSync(req.file.path);
+        fs.unlinkSync(req.file.path); // Clean up temp file
+      } catch (error) {
+        console.error('Error reading logo file:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error processing logo file'
+        });
+      }
+    }
+
     // Check if settings exist
     const existingSettings = await executeQuery('SELECT COUNT(*) as count FROM receipt_settings');
     
     if (existingSettings.success && existingSettings.data[0].count > 0) {
-      // Update existing settings
-      const result = await executeQuery(`
-        UPDATE receipt_settings 
-        SET logo = ?, company_name = ?, address = ?, phone = ?, footer = ?, updated_at = NOW()
-        WHERE id = (SELECT id FROM receipt_settings LIMIT 1)
-      `, [logo, companyName, address, phone, footer]);
+      let query, params;
+      if (logoData) {
+        // Update with new logo
+        query = `
+          UPDATE receipt_settings 
+          SET logo_data = ?, company_name = ?, address = ?, phone = ?, footer = ?, updated_at = NOW()
+          WHERE id = (SELECT id FROM receipt_settings LIMIT 1)
+        `;
+        params = [logoData, companyName, address, phone, footer];
+      } else {
+        // Update without changing logo
+        query = `
+          UPDATE receipt_settings 
+          SET company_name = ?, address = ?, phone = ?, footer = ?, updated_at = NOW()
+          WHERE id = (SELECT id FROM receipt_settings LIMIT 1)
+        `;
+        params = [companyName, address, phone, footer];
+      }
+      
+      const result = await executeQuery(query, params);
       
       if (!result.success) {
         throw new Error('Failed to update receipt settings');
@@ -1648,9 +1686,9 @@ router.put('/receipt-settings', authenticateToken, async (req, res) => {
     } else {
       // Create new settings
       const result = await executeQuery(`
-        INSERT INTO receipt_settings (logo, company_name, address, phone, footer, created_at, updated_at)
+        INSERT INTO receipt_settings (logo_data, company_name, address, phone, footer, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-      `, [logo, companyName, address, phone, footer]);
+      `, [logoData, companyName, address, phone, footer]);
       
       if (!result.success) {
         throw new Error('Failed to create receipt settings');
@@ -1660,9 +1698,18 @@ router.put('/receipt-settings', authenticateToken, async (req, res) => {
     // Get updated settings
     const updatedSettings = await executeQuery('SELECT * FROM receipt_settings LIMIT 1');
     
+    // Map database column names to JavaScript property names
+    const mappedData = {
+      logo: updatedSettings.data[0].logo_data ? `data:image/png;base64,${updatedSettings.data[0].logo_data.toString('base64')}` : null,
+      companyName: updatedSettings.data[0].company_name,
+      address: updatedSettings.data[0].address,
+      phone: updatedSettings.data[0].phone,
+      footer: updatedSettings.data[0].footer
+    };
+    
     res.json({
       success: true,
-      data: updatedSettings.data[0],
+      data: mappedData,
       message: 'Receipt settings updated successfully'
     });
     
