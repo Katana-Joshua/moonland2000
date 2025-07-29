@@ -78,6 +78,15 @@ const ReceiptTest = () => {
             <div>
               <strong className="text-amber-200">Logo:</strong>
               <p className="text-amber-100">{receiptSettings.logo ? 'Uploaded' : 'Not uploaded'}</p>
+              {receiptSettings.logo && (
+                <div className="mt-2">
+                  <img 
+                    src={receiptSettings.logo} 
+                    alt="Logo Preview" 
+                    className="w-16 h-16 object-contain bg-white rounded border"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -42,8 +42,6 @@ export const POSProvider = ({ children }) => {
       try {
         setIsLoading(true);
         
-        console.log('Fetching data from database...');
-        
         // Fetch all data in parallel
         const [inventoryData, salesData, expensesData, staffData, categoriesData, receiptSettingsData] = await Promise.all([
           posAPI.getInventory(),
@@ -53,20 +51,6 @@ export const POSProvider = ({ children }) => {
           posAPI.getCategories(),
           posAPI.getReceiptSettings().catch(() => null) // Fallback if endpoint doesn't exist yet
         ]);
-
-        console.log('Data fetched:', {
-          inventory: inventoryData,
-          sales: salesData,
-          expenses: expensesData,
-          staff: staffData,
-          categories: categoriesData,
-          receiptSettings: receiptSettingsData
-        });
-
-        // Debug inventory items with images
-        if (inventoryData && inventoryData.length > 0) {
-          console.log('Inventory items with images:', inventoryData.filter(item => item.image));
-        }
 
         setInventory(inventoryData || []);
         setSales((salesData || []).map(sale => ({
@@ -529,8 +513,11 @@ export const POSProvider = ({ children }) => {
 
   // --- Receipt Settings ---
   const updateReceiptSettings = async (newSettings) => {
+    const isFormData = newSettings instanceof FormData;
+    
     try {
       const response = await posAPI.updateReceiptSettings(newSettings);
+      
       if (response.success) {
         setReceiptSettings(response.data);
         toast({ title: "Settings Updated", description: "Receipt settings have been saved." });

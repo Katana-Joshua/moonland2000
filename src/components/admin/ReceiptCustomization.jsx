@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePOS } from '@/contexts/POSContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,23 @@ import { ImageDown as ImageUp, Save } from 'lucide-react';
 
 const ReceiptCustomization = () => {
   const { receiptSettings, updateReceiptSettings } = usePOS();
-  const [settings, setSettings] = useState(receiptSettings);
+  const [settings, setSettings] = useState({
+    ...receiptSettings,
+    logoFile: null,
+    removeLogo: false
+  });
   const [logoPreview, setLogoPreview] = useState(receiptSettings.logo);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync local state with context when receiptSettings change
+  useEffect(() => {
+    setSettings(prev => ({
+      ...receiptSettings,
+      logoFile: prev.logoFile,
+      removeLogo: prev.removeLogo
+    }));
+    setLogoPreview(receiptSettings.logo);
+  }, [receiptSettings]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,13 +44,22 @@ const ReceiptCustomization = () => {
         });
         return;
       }
+      
+      // Create preview for display
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result);
-        setSettings(prev => ({ ...prev, logo: reader.result }));
       };
       reader.readAsDataURL(file);
+      
+      // Store the file for upload
+      setSettings(prev => ({ ...prev, logoFile: file }));
     }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setSettings(prev => ({ ...prev, logoFile: null, removeLogo: true }));
   };
 
   const handleSubmit = async (e) => {
@@ -44,11 +67,25 @@ const ReceiptCustomization = () => {
     setIsSaving(true);
     
     try {
-      const success = await updateReceiptSettings(settings);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('companyName', settings.companyName || '');
+      formData.append('address', settings.address || '');
+      formData.append('phone', settings.phone || '');
+      formData.append('footer', settings.footer || '');
+      
+      if (settings.logoFile) {
+        formData.append('logo', settings.logoFile);
+      }
+      
+      if (settings.removeLogo) {
+        formData.append('removeLogo', 'true');
+      }
+      
+      const success = await updateReceiptSettings(formData);
       if (success) {
-        // Update local state with the new settings from the server
-        setSettings(receiptSettings);
-        setLogoPreview(receiptSettings.logo);
+        // Clear the logo file and remove flag after successful upload
+        setSettings(prev => ({ ...prev, logoFile: null, removeLogo: false }));
       }
     } catch (error) {
       console.error('Error saving receipt settings:', error);
@@ -115,13 +152,46 @@ const ReceiptCustomization = () => {
           <div className="space-y-2">
             <Label className="text-amber-200">Company Logo</Label>
             <div className="flex items-center gap-4">
-              {logoPreview && <img src={logoPreview} alt="Logo Preview" className="w-20 h-20 object-contain rounded-md bg-white p-1" />}
-              <Button asChild variant="outline" className="border-amber-700 hover:bg-amber-900/50">
-                <label htmlFor="logo-upload" className="cursor-pointer flex items-center">
-                  <ImageUp className="w-4 h-4 mr-2" />
-                  {logoPreview ? 'Change Logo' : 'Upload Logo'}
-                </label>
-              </Button>
+              {(logoPreview || receiptSettings.logo) && !settings.removeLogo && (
+                <img 
+                  src={logoPreview || receiptSettings.logo} 
+                  alt="Logo Preview" 
+                  className="w-20 h-20 object-contain rounded-md bg-white p-1" 
+                />
+              )}
+              {settings.removeLogo && (
+                <div className="w-20 h-20 flex items-center justify-center rounded-md bg-red-950/20 border border-red-800/50">
+                  <span className="text-red-400 text-xs text-center">Logo will be removed</span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button asChild variant="outline" className="border-amber-700 hover:bg-amber-900/50">
+                  <label htmlFor="logo-upload" className="cursor-pointer flex items-center">
+                    <ImageUp className="w-4 h-4 mr-2" />
+                    {(logoPreview || receiptSettings.logo) ? 'Change Logo' : 'Upload Logo'}
+                  </label>
+                </Button>
+                {(logoPreview || receiptSettings.logo) && !settings.removeLogo && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={handleRemoveLogo}
+                    className="border-red-700 hover:bg-red-900/50 text-red-200"
+                  >
+                    Remove Logo
+                  </Button>
+                )}
+                {settings.removeLogo && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => setSettings(prev => ({ ...prev, removeLogo: false }))}
+                    className="border-green-700 hover:bg-green-900/50 text-green-200"
+                  >
+                    Keep Logo
+                  </Button>
+                )}
+              </div>
               <Input id="logo-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleLogoChange} />
             </div>
           </div>

@@ -1630,7 +1630,7 @@ router.get('/receipt-settings', authenticateToken, async (req, res) => {
 // Update receipt settings
 router.put('/receipt-settings', authenticateToken, upload.single('logo'), async (req, res) => {
   try {
-    const { companyName, address, phone, footer } = req.body;
+    const { companyName, address, phone, footer, removeLogo } = req.body;
     
     // Validate required fields
     if (!companyName) {
@@ -1660,7 +1660,16 @@ router.put('/receipt-settings', authenticateToken, upload.single('logo'), async 
     
     if (existingSettings.success && existingSettings.data[0].count > 0) {
       let query, params;
-      if (logoData) {
+      
+      if (removeLogo === 'true') {
+        // Remove logo
+        query = `
+          UPDATE receipt_settings 
+          SET logo_data = NULL, company_name = ?, address = ?, phone = ?, footer = ?, updated_at = NOW()
+          WHERE id = (SELECT id FROM receipt_settings LIMIT 1)
+        `;
+        params = [companyName, address, phone, footer];
+      } else if (logoData) {
         // Update with new logo
         query = `
           UPDATE receipt_settings 

@@ -381,11 +381,24 @@ export const posAPI = {
   },
 
   updateReceiptSettings: async (settings) => {
-    const response = await apiRequest('/pos/receipt-settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
-    });
-    return response;
+    // Check if settings is FormData (for file upload) or regular object
+    const isFormData = settings instanceof FormData;
+    
+    if (isFormData) {
+      // Handle file upload with FormData
+      const response = await apiRequest('/pos/receipt-settings', {
+        method: 'PUT',
+        body: settings,
+      });
+      return response;
+    } else {
+      // Handle regular JSON data (backward compatibility)
+      const response = await apiRequest('/pos/receipt-settings', {
+        method: 'PUT',
+        body: JSON.stringify(settings),
+      });
+      return response;
+    }
   },
 };
 
