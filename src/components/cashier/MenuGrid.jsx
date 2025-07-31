@@ -10,7 +10,7 @@ import { toast } from '@/components/ui/use-toast';
 import { buildImageUrl } from '@/lib/api';
 
 const MenuGrid = () => {
-  const { inventory, addToCart, categories, currentShift, endShift } = usePOS();
+  const { inventory, addToCart, categories } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [barcode, setBarcode] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -45,24 +45,9 @@ const MenuGrid = () => {
   });
 
   return (
-    <div className="space-y-6">
-      {currentShift && (
-        <div className="flex justify-end mb-2">
-          <Button
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-            onClick={() => {
-              const endingCash = prompt('Enter ending cash amount to end shift:', '');
-              if (endingCash && !isNaN(Number(endingCash))) {
-                endShift(endingCash);
-              }
-            }}
-          >
-            End Shift
-          </Button>
-        </div>
-      )}
+    <div className="space-y-5">
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-amber-400" />
           <Input
@@ -71,7 +56,7 @@ const MenuGrid = () => {
             placeholder="Search menu items..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-black/20 border-amber-800/50 text-amber-100 placeholder:text-amber-300/50"
+            className="pl-10 bg-black/20 border-amber-800/50 text-amber-100 placeholder:text-amber-300/50 h-10"
           />
         </div>
         <form onSubmit={handleBarcodeScan} className="relative flex-1">
@@ -81,53 +66,57 @@ const MenuGrid = () => {
             placeholder="Scan barcode..."
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
-            className="pl-10 bg-black/20 border-amber-800/50 text-amber-100 placeholder:text-amber-300/50"
+            className="pl-10 bg-black/20 border-amber-800/50 text-amber-100 placeholder:text-amber-300/50 h-10"
           />
         </form>
       </div>
       
       {/* Category Filter */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {displayCategories.map(category => (
-          <motion.div
-            key={category.name}
-            whileHover={{ y: -4 }}
-            className="flex-shrink-0"
-          >
-            <button
-              onClick={() => setSelectedCategory(category.name)}
-              className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                selectedCategory === category.name 
-                  ? 'border-amber-500 scale-105 shadow-lg shadow-amber-500/25' 
-                  : 'border-transparent hover:border-amber-700'
-              }`}
+      <div className="relative">
+        <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-hide">
+          {displayCategories.map(category => (
+            <motion.div
+              key={category.name}
+              whileHover={{ y: -2 }}
+              className="flex-shrink-0"
             >
-              {category.image ? (
-                <img 
-                  src={buildImageUrl(category.image)} 
-                  alt={category.name} 
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                  onLoad={() => console.log('✅ Cashier category image loaded:', category.name)}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center">
-                  <span className="text-amber-200 font-bold text-sm">{category.name}</span>
+              <button
+                onClick={() => setSelectedCategory(category.name)}
+                className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                  selectedCategory === category.name 
+                    ? 'border-amber-500 scale-105 shadow-lg shadow-amber-500/25' 
+                    : 'border-transparent hover:border-amber-700'
+                }`}
+              >
+                {category.image ? (
+                  <img 
+                    src={buildImageUrl(category.image)} 
+                    alt={category.name} 
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                    onLoad={() => console.log('✅ Cashier category image loaded:', category.name)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center">
+                    <span className="text-amber-200 font-bold text-sm">{category.name}</span>
+                  </div>
+                )}
+                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                  selectedCategory === category.name 
+                    ? 'bg-black/30' 
+                    : 'bg-black/50 hover:bg-black/40'
+                }`}>
+                  <span className="text-white font-bold text-center text-sm drop-shadow-md">{category.name}</span>
                 </div>
-              )}
-              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-                selectedCategory === category.name 
-                  ? 'bg-black/30' 
-                  : 'bg-black/50 hover:bg-black/40'
-              }`}>
-                <span className="text-white font-bold text-center text-sm drop-shadow-md">{category.name}</span>
-              </div>
-            </button>
-          </motion.div>
-        ))}
+              </button>
+            </motion.div>
+          ))}
+        </div>
+        {/* Show scroll indicator */}
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/50 to-transparent pointer-events-none"></div>
       </div>
 
       {/* Menu Items Grid */}
@@ -141,9 +130,9 @@ const MenuGrid = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Card className="glass-effect border-amber-800/50 hover:border-amber-600/50 transition-all cursor-pointer group">
+            <Card className="glass-effect border-amber-800/50 hover:border-amber-600/50 transition-all cursor-pointer group h-full">
               <CardContent className="p-4">
-                <div className="aspect-square mb-3 overflow-hidden rounded-lg">
+                <div className="aspect-[4/3] mb-3 overflow-hidden rounded-lg">
                   {item.image ? (
                     <img
                       src={buildImageUrl(item.image)}
@@ -157,7 +146,7 @@ const MenuGrid = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center">
-                      <span className="text-amber-300 text-4xl font-bold">
+                      <span className="text-amber-300 text-3xl font-bold">
                         {item.name.charAt(0)}
                       </span>
                     </div>
@@ -168,8 +157,8 @@ const MenuGrid = () => {
                   <h3 className="font-semibold text-amber-100 line-clamp-1">{item.name}</h3>
                   <p className="text-sm text-amber-200/80">{item.category}</p>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-amber-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-base font-bold text-amber-100">
                       UGX {item.price.toLocaleString()}
                     </span>
                     <span className="text-sm text-amber-200/60">

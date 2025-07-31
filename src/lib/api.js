@@ -72,6 +72,21 @@ const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       console.error('❌ API Error:', response.status, data);
+      
+      // Handle token expiration - only for actual token expired messages
+      if (response.status === 401 && data.message === 'Token expired') {
+        console.log('🔄 Token expired, logging out user');
+        handleTokenExpiration();
+        throw new Error('Your session has expired. Please log in again.');
+      }
+      
+      // Handle other authentication errors - but be more specific
+      if (response.status === 401 && (data.message === 'Access token required' || data.message === 'Invalid token')) {
+        console.log('🔐 Authentication error, logging out user');
+        handleTokenExpiration();
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      
       throw new Error(data.message || 'API request failed');
     }
 
@@ -80,6 +95,23 @@ const apiRequest = async (endpoint, options = {}) => {
     console.error('API request error:', error);
     throw error;
   }
+};
+
+// Handle token expiration
+const handleTokenExpiration = () => {
+  console.log('🔄 Handling token expiration...');
+  
+  // Clear all authentication data
+  setAuthToken(null);
+  setUser(null);
+  localStorage.removeItem('moonland_current_shift');
+  localStorage.removeItem('moonland_token');
+  localStorage.removeItem('moonland_user');
+  
+  // Dispatch a custom event to notify the app about token expiration
+  window.dispatchEvent(new CustomEvent('tokenExpired', {
+    detail: { message: 'Your session has expired. Please log in again.' }
+  }));
 };
 
 // ===== AUTHENTICATION API =====
@@ -137,6 +169,39 @@ export const authAPI = {
   // Check if user is authenticated
   isAuthenticated: () => {
     return !!getAuthToken();
+  },
+
+  // Refresh token
+  refreshToken: async () => {
+    try {
+      const response = await apiRequest('/auth/refresh', {
+        method: 'POST',
+      });
+
+      if (response.success) {
+        setAuthToken(response.data.token);
+        setUser(response.data.user);
+        console.log('🔄 Token refreshed successfully');
+        return response;
+      } else {
+        throw new Error(response.message || 'Failed to refresh token');
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      // If refresh fails, handle as token expiration
+      handleTokenExpiration();
+      throw error;
+    }
+  },
+
+  // Check token validity
+  checkTokenValidity: async () => {
+    try {
+      const response = await apiRequest('/auth/profile');
+      return response.success;
+    } catch (error) {
+      return false;
+    }
   },
 };
 

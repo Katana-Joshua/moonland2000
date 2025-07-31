@@ -19,6 +19,64 @@ export const AuthProvider = ({ children }) => {
   // Check if user is authenticated
   const isAuthenticated = !!user && !!authAPI.isAuthenticated();
 
+  // Handle token expiration
+  useEffect(() => {
+    const handleTokenExpiration = (event) => {
+      console.log('🔄 Token expiration detected in AuthContext');
+      setUser(null);
+      toast({
+        title: "Session Expired",
+        description: event.detail?.message || "Your session has expired. Please log in again.",
+        variant: "destructive"
+      });
+    };
+
+    // Listen for token expiration events
+    window.addEventListener('tokenExpired', handleTokenExpiration);
+
+    return () => {
+      window.removeEventListener('tokenExpired', handleTokenExpiration);
+    };
+  }, []);
+
+  // Periodic token validation and refresh
+  useEffect(() => {
+    if (!user || !isAuthenticated) return;
+
+    const validateAndRefreshToken = async () => {
+      try {
+        // Only check token validity, don't automatically refresh
+        const isValid = await authAPI.checkTokenValidity();
+        if (!isValid) {
+          console.log('🔄 Token invalid, attempting silent refresh...');
+          await authAPI.refreshToken();
+          // Removed toast notification to avoid annoying the user
+        }
+      } catch (error) {
+        console.error('Token validation/refresh error:', error);
+        // Don't automatically logout on validation errors, only on actual token expiration
+      }
+    };
+
+    // Check token validity every 15 minutes instead of 5 minutes
+    const interval = setInterval(validateAndRefreshToken, 15 * 60 * 1000);
+
+    // Only check when page becomes visible, not on every visibility change
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Add a small delay to avoid immediate check on page focus
+        setTimeout(validateAndRefreshToken, 2000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, isAuthenticated]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import { executeQuery } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -147,6 +148,46 @@ router.post('/register', [
 
   } catch (error) {
     console.error('Registration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Refresh token route
+router.post('/refresh', authenticateToken, async (req, res) => {
+  try {
+    // Since we're using authenticateToken middleware, if we reach here, the token is valid
+    // We'll generate a new token with the same user data
+    const user = req.user;
+    
+    // Generate new JWT token
+    const newToken = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: {
+        token: newToken,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

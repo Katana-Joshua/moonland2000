@@ -64,15 +64,15 @@ const Cart = ({ onCheckout }) => {
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
-    <Card className="glass-effect border-amber-800/50 lg:sticky lg:top-4">
-      <CardHeader>
-        <CardTitle className="flex items-center text-amber-100">
+    <Card className="glass-effect border-amber-800/50 lg:sticky lg:top-4 h-fit">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center text-amber-100 text-lg">
           <ShoppingCart className="w-5 h-5 mr-2" />
           Current Order ({cart.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="max-h-64 lg:max-h-96 overflow-y-auto space-y-3 pr-2">
+      <CardContent className="space-y-3">
+        <div className="max-h-64 lg:max-h-80 overflow-y-auto space-y-2 pr-2">
           <AnimatePresence>
             {cart.map((item) => (
               <motion.div
@@ -80,9 +80,9 @@ const Cart = ({ onCheckout }) => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="p-3 bg-black/20 rounded-lg border border-amber-800/30"
+                className="p-2 bg-black/20 rounded-lg border border-amber-800/30"
               >
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-1">
                   <div className="flex-1">
                     <h4 className="font-semibold text-amber-100 text-sm">{item.name}</h4>
                     <CartItemPrice item={item} />
@@ -129,16 +129,16 @@ const Cart = ({ onCheckout }) => {
         </div>
 
         {cart.length === 0 ? (
-          <div className="text-center py-8">
-            <ShoppingCart className="w-12 h-12 mx-auto text-amber-400/50 mb-2" />
-            <p className="text-amber-200/60">Cart is empty</p>
+          <div className="text-center py-6">
+            <ShoppingCart className="w-10 h-10 mx-auto text-amber-400/50 mb-2" />
+            <p className="text-amber-200/60 text-sm">Cart is empty</p>
           </div>
         ) : (
           <>
-            <div className="border-t border-amber-800/30 pt-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-lg font-semibold text-amber-100">Total:</span>
-                <span className="text-2xl font-bold text-amber-100">UGX {total.toLocaleString()}</span>
+            <div className="border-t border-amber-800/30 pt-3">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-base font-semibold text-amber-100">Total:</span>
+                <span className="text-xl font-bold text-amber-100">UGX {total.toLocaleString()}</span>
               </div>
               
               <div className="space-y-2">

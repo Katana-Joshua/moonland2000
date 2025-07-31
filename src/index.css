@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar styles */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Glass effect */
+.glass-effect {
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 :root {
   --background: 25 20 15;
   --foreground: 255 248 240;
@@ -29,10 +68,6 @@ body {
   @apply bg-gradient-to-br from-amber-950 via-stone-900 to-black text-amber-50;
   font-family: 'Inter', sans-serif;
   min-height: 100vh;
-}
-
-.glass-effect {
-  @apply backdrop-blur-md bg-black/20 border border-amber-800/30;
 }
 
 .bar-gradient {

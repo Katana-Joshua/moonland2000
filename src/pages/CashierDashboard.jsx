@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePOS } from '@/contexts/POSContext';
-import { LogOut, ShoppingCart, Clock, Printer, TrendingDown } from 'lucide-react';
+import { LogOut, ShoppingCart, Clock, Printer, TrendingDown, PowerOff, X } from 'lucide-react';
 import MenuGrid from '@/components/cashier/MenuGrid';
 import Cart from '@/components/cashier/Cart';
 import ShiftManager from '@/components/cashier/ShiftManager';
@@ -15,11 +18,14 @@ import Loading from '@/components/ui/loading';
 
 const CashierDashboard = () => {
   const { user, logout } = useAuth();
-  const { currentShift, cart, sales, isLoading, checkShiftValidity } = usePOS();
+  const { currentShift, cart, sales, isLoading, checkShiftValidity, endShift } = usePOS();
   const navigate = useNavigate();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+  const [isEndShiftModalOpen, setIsEndShiftModalOpen] = useState(false);
+  const [endingCash, setEndingCash] = useState('');
+  const [isEndingShift, setIsEndingShift] = useState(false);
 
   // Check shift validity on component mount and when currentShift changes
   useEffect(() => {
@@ -31,6 +37,26 @@ const CashierDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleEndShift = async (e) => {
+    e.preventDefault();
+    
+    if (!endingCash || endingCash <= 0) {
+      alert('Please enter a valid ending cash amount');
+      return;
+    }
+
+    setIsEndingShift(true);
+    try {
+      await endShift(endingCash);
+      setIsEndShiftModalOpen(false);
+      setEndingCash('');
+    } catch (error) {
+      console.error('Error ending shift:', error);
+    } finally {
+      setIsEndingShift(false);
+    }
   };
 
   if (user?.role !== 'cashier') {
@@ -65,7 +91,15 @@ const CashierDashboard = () => {
             <p className="text-amber-200/80">Welcome, {user.username}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-             <Button
+            <Button
+              onClick={() => setIsEndShiftModalOpen(true)}
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              <PowerOff className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">End Shift</span>
+            </Button>
+            <Button
               onClick={() => setIsReprintModalOpen(true)}
               variant="outline"
               size="sm"
@@ -138,22 +172,106 @@ const CashierDashboard = () => {
         </motion.div>
 
         {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-5">
           {/* Cart (top on mobile) */}
           <div className="lg:hidden">
             <Cart onCheckout={() => setIsPaymentModalOpen(true)} />
           </div>
 
           {/* Menu Grid */}
-          <div className="lg:flex-grow">
+          <div className="lg:flex-1 lg:min-w-0">
             <MenuGrid />
           </div>
 
           {/* Cart (side on desktop) */}
-          <div className="hidden lg:block lg:w-1/3 lg:flex-shrink-0">
+          <div className="hidden lg:block lg:w-96 lg:flex-shrink-0">
             <Cart onCheckout={() => setIsPaymentModalOpen(true)} />
           </div>
         </div>
+
+        {/* End Shift Modal */}
+        {isEndShiftModalOpen && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-md"
+            >
+              <Card className="glass-effect border-amber-800/50">
+                <CardHeader className="text-center">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center justify-center text-amber-100">
+                      <Clock className="w-6 h-6 mr-2" />
+                      End Your Shift
+                    </CardTitle>
+                    <Button
+                      onClick={() => setIsEndShiftModalOpen(false)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-amber-200 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-amber-200/80">Complete your cashier session</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 mb-6">
+                    <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
+                      <p className="text-sm text-amber-200/80">Cashier</p>
+                      <p className="font-semibold text-amber-100">{currentShift.cashierName}</p>
+                    </div>
+                    <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
+                      <p className="text-sm text-amber-200/80">Shift Started</p>
+                      <p className="font-semibold text-amber-100">
+                        {currentShift.startTime && !isNaN(new Date(currentShift.startTime))
+                          ? new Date(currentShift.startTime).toLocaleString('en-US', { 
+                              timeZone: 'Africa/Kampala',
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
+                      <p className="text-sm text-amber-200/80">Starting Cash</p>
+                      <p className="font-semibold text-amber-100">UGX {currentShift.startingCash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleEndShift} className="space-y-4">
+                    <div>
+                      <Label className="text-amber-200">Ending Cash Amount</Label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 top-3 h-4 w-8 text-amber-400 font-bold">UGX</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={endingCash}
+                          onChange={(e) => setEndingCash(e.target.value)}
+                          className="pl-14 bg-black/20 border-amber-800/50 text-amber-100"
+                          placeholder="Enter ending cash amount"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+                      disabled={isEndingShift}
+                    >
+                      {isEndingShift ? 'Ending Shift...' : 'End Shift'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
 
         {/* Payment Modal */}
         <PaymentModal 
