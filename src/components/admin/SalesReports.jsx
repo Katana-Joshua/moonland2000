@@ -79,7 +79,7 @@ const SalesReports = () => {
     };
 
     if (exportType === 'pdf') {
-      generatePDF(exportData);
+      generatePDF(filteredSales, filteredExpenses);
       toast({
         title: 'PDF Generated',
         description: 'Financial report has been downloaded',
