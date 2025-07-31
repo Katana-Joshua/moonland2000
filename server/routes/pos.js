@@ -757,36 +757,39 @@ router.post('/shifts', [
 
     const { staffId, startingCash } = req.body;
     const shiftId = `shift-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const startTime = new Date().toISOString();
 
-    // First, try to find the staff record by the provided staffId
-    // This handles both cases: when staffId is a user ID or a staff ID
+    // For now, we'll use the staffId directly as the staff_id
+    // In a real system, you might want to create a staff record or link users to staff
     let actualStaffId = staffId;
     
-    // Check if staffId is a number (user ID) and find corresponding staff record
+    // If staffId is a number (user ID), we'll create a simple staff record
     if (!isNaN(staffId)) {
+      // Check if staff record exists for this user
       const staffResult = await executeQuery('SELECT id FROM staff WHERE id = ?', [staffId]);
-      if (staffResult.success && staffResult.data.length > 0) {
-        actualStaffId = staffResult.data[0].id;
-      } else {
-        // If not found by ID, try to find by user_id (if the staff table has user_id column)
-        const staffByUserId = await executeQuery('SELECT id FROM staff WHERE user_id = ?', [staffId]);
-        if (staffByUserId.success && staffByUserId.data.length > 0) {
-          actualStaffId = staffByUserId.data[0].id;
-        } else {
-          return res.status(400).json({
+      if (!staffResult.success || staffResult.data.length === 0) {
+        // Create a staff record for this user
+        const createStaffResult = await executeQuery(`
+          INSERT INTO staff (id, name, role, pin) 
+          VALUES (?, ?, 'Cashier', '0000')
+        `, [staffId, `User ${staffId}`]);
+        
+        if (!createStaffResult.success) {
+          return res.status(500).json({
             success: false,
-            message: 'Staff member not found'
+            message: 'Failed to create staff record'
           });
         }
       }
+      actualStaffId = staffId;
     }
 
     console.log(`🔧 Creating shift with staff ID: ${actualStaffId} (original: ${staffId})`);
 
     const result = await executeQuery(`
       INSERT INTO shifts (id, staff_id, start_time, starting_cash, status)
-      VALUES (?, ?, CURRENT_TIMESTAMP, ?, 'active')
-    `, [shiftId, actualStaffId, startingCash]);
+      VALUES (?, ?, ?, ?, 'active')
+    `, [shiftId, actualStaffId, startTime, startingCash]);
 
     if (!result.success) {
       return res.status(500).json({
@@ -801,8 +804,8 @@ router.post('/shifts', [
       data: {
         id: shiftId,
         staffId: actualStaffId,
-        startTime: new Date().toISOString(),
-        startingCash
+        start_time: startTime,
+        starting_cash: parseFloat(startingCash)
       }
     });
   } catch (error) {
@@ -830,12 +833,32 @@ router.put('/shifts/:id/end', [
 
     const { id } = req.params;
     const { endingCash } = req.body;
+    const endTime = new Date().toISOString();
+
+    // First check if shift exists and is active
+    const checkResult = await executeQuery(`
+      SELECT * FROM shifts WHERE id = ? AND status = 'active'
+    `, [id]);
+
+    if (!checkResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to check shift status'
+      });
+    }
+
+    if (checkResult.data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shift not found or already ended'
+      });
+    }
 
     const result = await executeQuery(`
       UPDATE shifts 
-      SET end_time = CURRENT_TIMESTAMP, ending_cash = ?, status = 'completed'
+      SET end_time = ?, ending_cash = ?, status = 'completed'
       WHERE id = ? AND status = 'active'
-    `, [endingCash, id]);
+    `, [endTime, endingCash, id]);
 
     if (!result.success) {
       return res.status(500).json({
@@ -853,7 +876,12 @@ router.put('/shifts/:id/end', [
 
     res.json({
       success: true,
-      message: 'Shift ended successfully'
+      message: 'Shift ended successfully',
+      data: {
+        id: id,
+        end_time: endTime,
+        ending_cash: parseFloat(endingCash)
+      }
     });
   } catch (error) {
     console.error('End shift error:', error);
@@ -868,7 +896,10 @@ router.put('/shifts/:id/end', [
 router.get('/shifts', async (req, res) => {
   try {
     const result = await executeQuery(`
-      SELECT s.*, st.name as staff_name
+      SELECT 
+        s.*,
+        st.name as staff_name,
+        st.id as staff_id
       FROM shifts s
       LEFT JOIN staff st ON s.staff_id = st.id
       ORDER BY s.start_time DESC
@@ -881,9 +912,20 @@ router.get('/shifts', async (req, res) => {
       });
     }
 
+    // Format the data properly
+    const formattedShifts = result.data.map(shift => ({
+      ...shift,
+      staff: {
+        id: shift.staff_id,
+        name: shift.staff_name || 'Unknown'
+      },
+      starting_cash: parseFloat(shift.starting_cash) || 0,
+      ending_cash: shift.ending_cash ? parseFloat(shift.ending_cash) : null
+    }));
+
     res.json({
       success: true,
-      data: result.data
+      data: formattedShifts
     });
   } catch (error) {
     console.error('Get shifts error:', error);
@@ -904,11 +946,12 @@ router.get('/shifts/active', async (req, res) => {
     }
 
     // Find staff record for this user
-    const staffResult = await executeQuery('SELECT id FROM staff WHERE user_id = ?', [userId]);
+    const staffResult = await executeQuery('SELECT id, name FROM staff WHERE user_id = ?', [userId]);
     if (!staffResult.success || staffResult.data.length === 0) {
       return res.json({ success: true, data: null });
     }
     const staffId = staffResult.data[0].id;
+    const staffName = staffResult.data[0].name;
 
     // Find active shift for this staff
     const shiftResult = await executeQuery(
@@ -918,8 +961,18 @@ router.get('/shifts/active', async (req, res) => {
     if (!shiftResult.success || shiftResult.data.length === 0) {
       return res.json({ success: true, data: null });
     }
-    res.json({ success: true, data: shiftResult.data[0] });
+    
+    const shift = shiftResult.data[0];
+    const formattedShift = {
+      ...shift,
+      staff_id: staffId,
+      cashierName: staffName,
+      startingCash: parseFloat(shift.starting_cash) || 0
+    };
+    
+    res.json({ success: true, data: formattedShift });
   } catch (error) {
+    console.error('Get active shift error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
@@ -1731,4 +1784,4 @@ router.put('/receipt-settings', authenticateToken, upload.single('logo'), async 
   }
 });
 
-export default router; 
+export default router;

@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePOS } from '@/contexts/POSContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Clock, DollarSign, User } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const ShiftManager = () => {
-  const { startShift, endShift, currentShift } = usePOS();
+  const { startShift, endShift, currentShift, setCurrentShift } = usePOS();
   const { user } = useAuth();
   const [startingCash, setStartingCash] = useState('200.00');
   const [endingCash, setEndingCash] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Persist currentShift in localStorage
   useEffect(() => {
@@ -25,25 +27,74 @@ const ShiftManager = () => {
 
   // On mount, restore shift if present
   useEffect(() => {
-    if (!currentShift) {
-      const saved = localStorage.getItem('moonland_current_shift');
-      if (saved) {
-        // You may want to validate the saved data
-        // setCurrentShift(JSON.parse(saved));
+    const saved = localStorage.getItem('moonland_current_shift');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('🔄 Restoring shift from localStorage:', parsed);
+        if (parsed && !parsed.endTime && parsed.status === 'active') {
+          setCurrentShift(parsed);
+        } else {
+          localStorage.removeItem('moonland_current_shift');
+        }
+      } catch (e) {
+        console.error('❌ Error parsing saved shift:', e);
+        localStorage.removeItem('moonland_current_shift');
       }
     }
   }, []);
 
-  const handleStartShift = (e) => {
+  // Debug current shift data
+  useEffect(() => {
+    if (currentShift) {
+      console.log('📊 Current shift data:', currentShift);
+      console.log('🕐 Start time:', currentShift.startTime);
+      console.log('🕐 Start time type:', typeof currentShift.startTime);
+    }
+  }, [currentShift]);
+
+  const handleStartShift = async (e) => {
     e.preventDefault();
-    if (!user || !startingCash) return;
-    startShift(user.id, user.username, startingCash);
+    
+    if (!startingCash || startingCash <= 0) {
+      toast({
+        title: "Invalid Starting Cash",
+        description: "Please enter a valid starting cash amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await startShift(user.id, user.username, startingCash);
+    } catch (error) {
+      console.error('Error starting shift:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEndShift = (e) => {
+  const handleEndShift = async (e) => {
     e.preventDefault();
-    if (!endingCash) return;
-    endShift(endingCash);
+    
+    if (!endingCash || endingCash <= 0) {
+      toast({
+        title: "Invalid Ending Cash",
+        description: "Please enter a valid ending cash amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await endShift(endingCash);
+    } catch (error) {
+      console.error('Error ending shift:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!currentShift) {
@@ -93,8 +144,9 @@ const ShiftManager = () => {
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+                  disabled={isLoading}
                 >
-                  Start Shift
+                  {isLoading ? 'Starting Shift...' : 'Start Shift'}
                 </Button>
               </form>
             </CardContent>
@@ -128,9 +180,35 @@ const ShiftManager = () => {
               <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
                 <p className="text-sm text-amber-200/80">Shift Started</p>
                 <p className="font-semibold text-amber-100">
-                  {currentShift.startTime && !isNaN(new Date(currentShift.startTime))
-                    ? new Date(currentShift.startTime).toLocaleString('en-US', { timeZone: 'Africa/Kampala' })
-                    : 'N/A'}
+                  {(() => {
+                    console.log('🕐 Rendering start time:', currentShift.startTime);
+                    if (currentShift.startTime) {
+                      try {
+                        const date = new Date(currentShift.startTime);
+                        console.log('🕐 Parsed date:', date);
+                        if (!isNaN(date.getTime())) {
+                          return date.toLocaleString('en-US', { 
+                            timeZone: 'Africa/Kampala',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          });
+                        } else {
+                          console.log('🕐 Invalid date:', currentShift.startTime);
+                          return 'Invalid Date';
+                        }
+                      } catch (error) {
+                        console.log('🕐 Date parsing error:', error);
+                        return 'Error';
+                      }
+                    } else {
+                      console.log('🕐 No start time available');
+                      return 'N/A';
+                    }
+                  })()}
                 </p>
               </div>
               <div className="p-3 bg-black/20 rounded-lg border border-amber-800/30">
@@ -158,8 +236,9 @@ const ShiftManager = () => {
               <Button
                 type="submit"
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+                disabled={isLoading}
               >
-                End Shift
+                {isLoading ? 'Ending Shift...' : 'End Shift'}
               </Button>
             </form>
           </CardContent>

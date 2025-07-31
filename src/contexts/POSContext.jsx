@@ -99,31 +99,63 @@ export const POSProvider = ({ children }) => {
   useEffect(() => {
     const restoreShift = async () => {
       if (!isAuthenticated || !user) return;
-      // Check backend for active shift
-      const activeShift = await posAPI.getActiveShift(user.id);
-      if (activeShift) {
-        setCurrentShift(activeShift);
-        localStorage.setItem('moonland_current_shift', JSON.stringify(activeShift));
-      } else {
-        // Fallback: check localStorage (legacy)
+      
+      try {
+        // Check backend for active shift first
+        const activeShift = await posAPI.getActiveShift(user.id);
+        if (activeShift) {
+          console.log('✅ Found active shift from backend:', activeShift);
+          // Map backend field names to frontend expectations
+          const mappedShift = {
+            id: activeShift.id,
+            staff_id: activeShift.staff_id,
+            cashierName: activeShift.cashierName || user.username,
+            startTime: activeShift.start_time,
+            startingCash: activeShift.starting_cash,
+            status: activeShift.status
+          };
+          setCurrentShift(mappedShift);
+          localStorage.setItem('moonland_current_shift', JSON.stringify(mappedShift));
+          return;
+        }
+        
+        // Fallback: check localStorage (legacy support)
         const saved = localStorage.getItem('moonland_current_shift');
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (!parsed.endTime) {
+            // Only restore if shift doesn't have an end time and is marked as active
+            if (parsed && !parsed.endTime && parsed.status === 'active') {
+              console.log('✅ Restoring shift from localStorage:', parsed);
               setCurrentShift(parsed);
             } else {
+              console.log('🗑️ Removing expired shift from localStorage');
               localStorage.removeItem('moonland_current_shift');
             }
           } catch (e) {
+            console.error('❌ Error parsing saved shift:', e);
             localStorage.removeItem('moonland_current_shift');
           }
         }
+      } catch (error) {
+        console.error('❌ Error restoring shift:', error);
+        // Don't show toast for shift restoration errors as they're not critical
       }
     };
+    
     restoreShift();
-    // eslint-disable-next-line
   }, [isAuthenticated, user]);
+
+  // Periodic shift validation check
+  useEffect(() => {
+    if (!currentShift) return;
+
+    const interval = setInterval(() => {
+      checkShiftValidity();
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [currentShift]);
 
   // --- Cart ---
   const addToCart = (item) => {
@@ -277,6 +309,20 @@ export const POSProvider = ({ children }) => {
   };
 
   // --- Shift ---
+  const checkShiftValidity = () => {
+    if (!currentShift) return false;
+    
+    // Check if shift has an end time (already ended)
+    if (currentShift.endTime || currentShift.status === 'completed') {
+      console.log('🗑️ Shift already ended, clearing from state');
+      setCurrentShift(null);
+      localStorage.removeItem('moonland_current_shift');
+      return false;
+    }
+    
+    return true;
+  };
+
   const startShift = async (staffId, cashierName, startingCash) => {
     try {
       const response = await posAPI.startShift({
@@ -287,12 +333,14 @@ export const POSProvider = ({ children }) => {
       if (response.success) {
         const shift = {
           id: response.data.id,
-          staff_id: staffId,
+          staff_id: response.data.staffId,
           cashierName,
-          startTime: response.data.startTime,
+          startTime: response.data.start_time, // Use the corrected field name
           startingCash: parseFloat(startingCash),
+          status: 'active'
         };
         setCurrentShift(shift);
+        localStorage.setItem('moonland_current_shift', JSON.stringify(shift));
         toast({ title: "Shift Started", description: `Welcome ${cashierName}!` });
       } else {
         toast({ title: "Error Starting Shift", description: response.message, variant: 'destructive' });
@@ -537,6 +585,7 @@ export const POSProvider = ({ children }) => {
     sales,
     expenses,
     currentShift,
+    setCurrentShift,
     cart,
     staff,
     categories,
@@ -552,6 +601,7 @@ export const POSProvider = ({ children }) => {
     addExpense,
     startShift,
     endShift,
+    checkShiftValidity,
     addInventoryItem,
     updateInventoryItem,
     deleteInventoryItem,

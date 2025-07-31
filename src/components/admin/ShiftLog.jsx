@@ -34,13 +34,27 @@ const ShiftLog = () => {
   }, []);
 
   const formatCurrency = (amount) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return `UGX ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (amount === null || amount === undefined || amount === '') return 'N/A';
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return 'N/A';
+    return `UGX ${numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
+    try {
+      return new Date(dateString).toLocaleString('en-US', {
+        timeZone: 'Africa/Kampala',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   if (loading) {
@@ -91,7 +105,9 @@ const ShiftLog = () => {
                 {shifts.length > 0 ? (
                   shifts.map((shift) => (
                     <TableRow key={shift.id} className="border-amber-800/50 hover:bg-black/20">
-                      <TableCell className="font-medium text-amber-100">{shift.staff?.name || 'Unknown'}</TableCell>
+                      <TableCell className="font-medium text-amber-100">
+                        {shift.staff?.name || shift.staff_name || 'Unknown'}
+                      </TableCell>
                       <TableCell className="text-amber-300">{formatDate(shift.start_time)}</TableCell>
                       <TableCell className="text-amber-300">{formatDate(shift.end_time)}</TableCell>
                       <TableCell className="text-right text-amber-300">{formatCurrency(shift.starting_cash)}</TableCell>

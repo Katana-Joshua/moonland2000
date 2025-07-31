@@ -15,11 +15,18 @@ import Loading from '@/components/ui/loading';
 
 const CashierDashboard = () => {
   const { user, logout } = useAuth();
-  const { currentShift, cart, sales, isLoading } = usePOS();
+  const { currentShift, cart, sales, isLoading, checkShiftValidity } = usePOS();
   const navigate = useNavigate();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+
+  // Check shift validity on component mount and when currentShift changes
+  useEffect(() => {
+    if (currentShift) {
+      checkShiftValidity();
+    }
+  }, [currentShift, checkShiftValidity]);
 
   const handleLogout = () => {
     logout();
