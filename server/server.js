@@ -24,10 +24,13 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - More permissive for development
+// CORS configuration - Use environment variables
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+const corsOrigins = corsOrigin === '*' ? '*' : corsOrigin.split(',').map(origin => origin.trim());
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'https://conbaryhotel-production.up.railway.app'],
-  credentials: false,
+  origin: corsOrigins,
+  credentials: process.env.CORS_CREDENTIALS === 'true',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
   exposedHeaders: ['Content-Disposition', 'Content-Length', 'Content-Type']
@@ -49,7 +52,7 @@ app.use(limiter);
 
 // Global CORS headers for all routes
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // Allow all origins for development
+  res.header('Access-Control-Allow-Origin', corsOrigin); // Use environment variable
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -70,7 +73,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files (uploaded images) with CORS headers and optimization
 app.use('/uploads', (req, res, next) => {
   // Set CORS headers for static files
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', corsOrigin);
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Max-Age', '86400');
@@ -84,7 +87,7 @@ app.use('/uploads', (req, res, next) => {
 }, express.static('uploads', {
   setHeaders: (res, filePath) => {
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Origin', corsOrigin);
     res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
     
     // Don't compress images - they're already compressed
@@ -121,7 +124,7 @@ app.get('/health', (req, res) => {
 
 // Specific route for serving images with CORS headers
 app.get('/uploads/*', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', corsOrigin);
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -171,6 +174,8 @@ const startServer = async () => {
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
       console.log(`🌐 API Base URL: http://localhost:${PORT}/api`);
+      console.log(`🌍 CORS Origin: ${corsOrigin}`);
+      console.log(`🔐 CORS Credentials: ${process.env.CORS_CREDENTIALS === 'true' ? 'enabled' : 'disabled'}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
