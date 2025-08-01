@@ -73,39 +73,59 @@ export const AccountingProvider = ({ children }) => {
   const transactions = useMemo(() => {
     const allTransactions = [];
 
-    // Sales
+    // Sales transactions
     sales.forEach(sale => {
-      allTransactions.push({
-        id: `S-${sale.id}`,
-        date: sale.timestamp,
-        type: 'Sale',
-        narration: `Sale to ${sale.paymentMethod === 'Credit' ? sale.customerName : 'Customer'} (Receipt #${sale.id})`,
-        debit: { account: sale.paymentMethod === 'Credit' ? 'Accounts Receivable' : 'Cash/Bank', amount: sale.total },
-        credit: { account: 'Sales', amount: sale.total },
-      });
-      allTransactions.push({
-        id: `COGS-${sale.id}`,
-        date: sale.timestamp,
-        type: 'COGS',
-        narration: `Cost for Sale #${sale.id}`,
-        debit: { account: 'Cost of Goods Sold', amount: sale.total - sale.profit },
-        credit: { account: 'Inventory', amount: sale.total - sale.profit },
-      });
+      // For cash sales
+      if (sale.paymentMethod !== 'Credit') {
+        allTransactions.push({
+          id: `S-${sale.id}`,
+          date: sale.timestamp,
+          type: 'Sale',
+          narration: `Sale to Customer (Receipt #${sale.id})`,
+          debit: { account: 'Cash/Bank', amount: sale.total },
+          credit: { account: 'Sales', amount: sale.total },
+        });
+      } else {
+        // For credit sales
+        allTransactions.push({
+          id: `S-${sale.id}`,
+          date: sale.timestamp,
+          type: 'Sale',
+          narration: `Credit Sale to ${sale.customerName} (Receipt #${sale.id})`,
+          debit: { account: 'Accounts Receivable', amount: sale.total },
+          credit: { account: 'Sales', amount: sale.total },
+        });
+      }
+
+      // Cost of Goods Sold (only if we have profit data)
+      if (sale.profit !== undefined && sale.profit !== null) {
+        const costOfGoods = sale.total - sale.profit;
+        if (costOfGoods > 0) {
+          allTransactions.push({
+            id: `COGS-${sale.id}`,
+            date: sale.timestamp,
+            type: 'COGS',
+            narration: `Cost of Goods Sold for Sale #${sale.id}`,
+            debit: { account: 'Cost of Goods Sold', amount: costOfGoods },
+            credit: { account: 'Inventory', amount: costOfGoods },
+          });
+        }
+      }
     });
 
-    // Expenses
+    // Expenses transactions
     expenses.forEach(expense => {
       allTransactions.push({
         id: `E-${expense.id}`,
         date: expense.timestamp,
         type: 'Expense',
         narration: expense.description,
-        debit: { account: 'Expenses', amount: expense.amount },
+        debit: { account: 'Operating Expenses', amount: expense.amount },
         credit: { account: 'Cash/Bank', amount: expense.amount },
       });
     });
 
-    // Vouchers
+    // Vouchers transactions
     vouchers.forEach(voucher => {
       allTransactions.push({
         id: voucher.id,
@@ -142,17 +162,35 @@ export const AccountingProvider = ({ children }) => {
       ledgerData[credit.account].transactions.push({ ...tx, type: 'credit', amount: credit.amount });
     });
 
-    // Calculate balances
+    // Calculate balances using proper accounting rules
     for (const account in ledgerData) {
       let balance = 0;
       // Sort transactions by date for correct balance calculation
       ledgerData[account].transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
       ledgerData[account].transactions.forEach(transaction => {
+        const accountInfo = accounts.find(a => a.name === account);
+        const accountType = accountInfo ? accountInfo.type : '';
+        
+        // Determine if this account has a normal debit or credit balance
+        const isDebitNormal = ['asset', 'expense'].includes(accountType);
+        
         if (transaction.debit.account === account) {
-          balance += transaction.debit.amount;
+          // This account is being debited
+          if (isDebitNormal) {
+            balance += transaction.debit.amount; // Increase for assets/expenses
+          } else {
+            balance -= transaction.debit.amount; // Decrease for liabilities/equity/revenue
+          }
         } else if (transaction.credit.account === account) {
-          balance -= transaction.credit.amount;
+          // This account is being credited
+          if (isDebitNormal) {
+            balance -= transaction.credit.amount; // Decrease for assets/expenses
+          } else {
+            balance += transaction.credit.amount; // Increase for liabilities/equity/revenue
+          }
         }
+        
         transaction.balance = balance;
       });
       ledgerData[account].balance = balance;
@@ -165,14 +203,28 @@ export const AccountingProvider = ({ children }) => {
     Object.entries(ledgers).forEach(([accountName, data]) => {
         const accountInfo = accounts.find(a => a.name === accountName);
         const accountType = accountInfo ? accountInfo.type : '';
-        const isDebitNormal = ['Asset', 'Expense'].includes(accountType);
+        const isDebitNormal = ['asset', 'expense'].includes(accountType);
 
+        // For trial balance, we show the normal balance side
         if (data.balance > 0) {
-            if(isDebitNormal) trialAccounts[accountName] = { debit: data.balance, credit: 0 };
-            else trialAccounts[accountName] = { debit: 0, credit: data.balance };
+            if (isDebitNormal) {
+                // Assets and Expenses normally have debit balances
+                trialAccounts[accountName] = { debit: data.balance, credit: 0 };
+            } else {
+                // Liabilities, Equity, and Revenue normally have credit balances
+                trialAccounts[accountName] = { debit: 0, credit: data.balance };
+            }
         } else if (data.balance < 0) {
-            if(isDebitNormal) trialAccounts[accountName] = { debit: 0, credit: -data.balance };
-            else trialAccounts[accountName] = { debit: -data.balance, credit: 0 };
+            if (isDebitNormal) {
+                // Assets and Expenses with negative balance (abnormal) go to credit side
+                trialAccounts[accountName] = { debit: 0, credit: -data.balance };
+            } else {
+                // Liabilities, Equity, and Revenue with negative balance (abnormal) go to debit side
+                trialAccounts[accountName] = { debit: -data.balance, credit: 0 };
+            }
+        } else {
+            // Zero balance accounts don't appear in trial balance
+            // trialAccounts[accountName] = { debit: 0, credit: 0 };
         }
     });
     return trialAccounts;
@@ -182,7 +234,7 @@ export const AccountingProvider = ({ children }) => {
     const revenue = ledgers['Sales']?.balance || 0;
     const cogs = ledgers['Cost of Goods Sold']?.balance || 0;
     const grossProfit = revenue - cogs;
-    const operatingExpenses = ledgers['Expenses']?.balance || 0;
+    const operatingExpenses = ledgers['Operating Expenses']?.balance || 0;
     const netProfit = grossProfit - operatingExpenses;
     return { revenue, cogs, grossProfit, operatingExpenses, netProfit };
   }, [ledgers]);

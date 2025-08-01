@@ -13,23 +13,23 @@ import { toast } from '@/components/ui/use-toast';
 const ChartOfAccounts = () => {
   const { accounts, addAccount, loadingAccounts } = useAccounting();
   const [open, setOpen] = useState(false);
-  const [newAccount, setNewAccount] = useState({ name: '', type: '', description: '' });
+  const [newAccount, setNewAccount] = useState({ code: '', name: '', type: '', description: '' });
 
   const handleAddAccount = async (e) => {
     e.preventDefault();
-    if (!newAccount.name || !newAccount.type) {
-        toast({ title: "Validation Error", description: "Account name and type are required.", variant: "destructive" });
+    if (!newAccount.code || !newAccount.name || !newAccount.type) {
+        toast({ title: "Validation Error", description: "Account code, name and type are required.", variant: "destructive" });
         return;
     }
     
     const created = await addAccount(newAccount);
     if(created) {
-        setNewAccount({ name: '', type: '', description: '' });
+        setNewAccount({ code: '', name: '', type: '', description: '' });
         setOpen(false);
     }
   };
 
-  const accountTypes = ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'];
+  const accountTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'];
 
   return (
     <Card className="glass-effect border-amber-800/50">
@@ -58,6 +58,10 @@ const ChartOfAccounts = () => {
               </DialogHeader>
               <form onSubmit={handleAddAccount}>
                 <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="code" className="text-right">Code</Label>
+                    <Input id="code" value={newAccount.code} onChange={e => setNewAccount({...newAccount, code: e.target.value})} className="col-span-3 bg-black/20 border-amber-800/50" placeholder="e.g., 1000" />
+                  </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Name</Label>
                     <Input id="name" value={newAccount.name} onChange={e => setNewAccount({...newAccount, name: e.target.value})} className="col-span-3 bg-black/20 border-amber-800/50" />
@@ -97,14 +101,16 @@ const ChartOfAccounts = () => {
             <Table>
                 <TableHeader>
                 <TableRow>
+                    <TableHead>Code</TableHead>
                     <TableHead>Account Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Description</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {[...accounts].sort((a,b) => a.name.localeCompare(b.name)).map(account => (
+                {[...accounts].sort((a,b) => a.code.localeCompare(b.code)).map(account => (
                     <TableRow key={account.id}>
+                    <TableCell className="font-mono">{account.code}</TableCell>
                     <TableCell className="font-medium">{account.name}</TableCell>
                     <TableCell>{account.type}</TableCell>
                     <TableCell>{account.description}</TableCell>
