@@ -28,12 +28,15 @@ app.use(helmet());
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 const corsOrigins = corsOrigin === '*' ? '*' : corsOrigin.split(',').map(origin => origin.trim());
 
+// More explicit CORS configuration
 app.use(cors({
   origin: corsOrigins,
   credentials: process.env.CORS_CREDENTIALS === 'true',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  exposedHeaders: ['Content-Disposition', 'Content-Length', 'Content-Type']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-API-Key'],
+  exposedHeaders: ['Content-Disposition', 'Content-Length', 'Content-Type'],
+  optionsSuccessStatus: 200,
+  preflightContinue: false
 }));
 
 // Rate limiting
@@ -50,18 +53,31 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// Handle OPTIONS preflight requests explicitly
+app.options('*', (req, res) => {
+  console.log('🔍 OPTIONS preflight request received from:', req.headers.origin);
+  console.log('🔍 CORS Origin setting:', corsOrigin);
+  
+  res.header('Access-Control-Allow-Origin', corsOrigin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-API-Key');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
+});
+
 // Global CORS headers for all routes
 app.use((req, res, next) => {
+  // Log CORS requests for debugging
+  if (req.method === 'OPTIONS' || req.headers.origin) {
+    console.log('🌍 CORS Request:', req.method, req.path, 'from:', req.headers.origin);
+    console.log('🌍 Setting CORS Origin to:', corsOrigin);
+  }
+  
   res.header('Access-Control-Allow-Origin', corsOrigin); // Use environment variable
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-API-Key');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
   
   next();
 });
@@ -118,7 +134,20 @@ app.get('/health', (req, res) => {
     success: true,
     message: 'Moon Land POS Server is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    corsOrigin: corsOrigin,
+    corsOrigins: corsOrigins
+  });
+});
+
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS test successful',
+    origin: req.headers.origin,
+    corsOrigin: corsOrigin,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -176,6 +205,8 @@ const startServer = async () => {
       console.log(`🌐 API Base URL: http://localhost:${PORT}/api`);
       console.log(`🌍 CORS Origin: ${corsOrigin}`);
       console.log(`🔐 CORS Credentials: ${process.env.CORS_CREDENTIALS === 'true' ? 'enabled' : 'disabled'}`);
+      console.log(`🔧 Raw CORS_ORIGIN env: ${process.env.CORS_ORIGIN}`);
+      console.log(`🔧 CORS Origins array:`, corsOrigins);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
