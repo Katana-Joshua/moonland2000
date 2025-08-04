@@ -124,13 +124,14 @@ const getContentType = (filePath) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: 'Moon Land POS Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     corsOrigin: '*',
-    corsOrigins: '*'
+    corsOrigins: '*',
+    uptime: process.uptime()
   });
 });
 
