@@ -12,9 +12,12 @@ const DailyClosingReport = () => {
   const todayExpenses = expenses.filter(e => new Date(e.timestamp).toDateString() === today);
 
   const totalSales = todaySales.reduce((sum, sale) => sum + sale.total, 0);
-  const cashSales = todaySales.filter(s => s.paymentMethod === 'Cash').reduce((sum, s) => sum + s.total, 0);
-  const cardSales = todaySales.filter(s => s.paymentMethod === 'Card').reduce((sum, s) => sum + s.total, 0);
-  const creditSales = todaySales.filter(s => s.paymentMethod === 'Credit').reduce((sum, s) => sum + s.total, 0);
+  const cashSales = todaySales.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + s.total, 0);
+  const momoSales = todaySales.filter(s => s.paymentMethod === 'momo').reduce((sum, s) => sum + s.total, 0);
+  const airtelSales = todaySales.filter(s => s.paymentMethod === 'airtel').reduce((sum, s) => sum + s.total, 0);
+  const bankDepositSales = todaySales.filter(s => s.paymentMethod === 'bank_deposit').reduce((sum, s) => sum + s.total, 0);
+  const creditCardSales = todaySales.filter(s => s.paymentMethod === 'credit_card').reduce((sum, s) => sum + s.total, 0);
+  const creditSales = todaySales.filter(s => s.paymentMethod === 'credit').reduce((sum, s) => sum + s.total, 0);
   const totalExpenses = todayExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const netCash = cashSales - totalExpenses;
 
@@ -43,8 +46,20 @@ const DailyClosingReport = () => {
                   <TableCell className="text-right">{formatCurrency(cashSales)}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="pl-8">Card Sales</TableCell>
-                  <TableCell className="text-right">{formatCurrency(cardSales)}</TableCell>
+                  <TableCell className="pl-8">Momo Sales</TableCell>
+                  <TableCell className="text-right">{formatCurrency(momoSales)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="pl-8">Airtel Money Sales</TableCell>
+                  <TableCell className="text-right">{formatCurrency(airtelSales)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="pl-8">Bank Deposit Sales</TableCell>
+                  <TableCell className="text-right">{formatCurrency(bankDepositSales)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="pl-8">Credit Card Sales</TableCell>
+                  <TableCell className="text-right">{formatCurrency(creditCardSales)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="pl-8">Credit Sales</TableCell>

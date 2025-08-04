@@ -75,27 +75,35 @@ export const AccountingProvider = ({ children }) => {
 
     // Sales transactions
     sales.forEach(sale => {
-      // For cash sales
-      if (sale.paymentMethod !== 'Credit') {
-        allTransactions.push({
-          id: `S-${sale.id}`,
-          date: sale.timestamp,
-          type: 'Sale',
-          narration: `Sale to Customer (Receipt #${sale.id})`,
-          debit: { account: 'Cash/Bank', amount: sale.total },
-          credit: { account: 'Sales', amount: sale.total },
-        });
-      } else {
-        // For credit sales
-        allTransactions.push({
-          id: `S-${sale.id}`,
-          date: sale.timestamp,
-          type: 'Sale',
-          narration: `Credit Sale to ${sale.customerName} (Receipt #${sale.id})`,
-          debit: { account: 'Accounts Receivable', amount: sale.total },
-          credit: { account: 'Sales', amount: sale.total },
-        });
+      // Determine the appropriate debit account based on payment method
+      let debitAccount = 'Cash/Bank';
+      let narration = `Sale to Customer (Receipt #${sale.id})`;
+      
+      if (sale.paymentMethod === 'credit') {
+        debitAccount = 'Accounts Receivable';
+        narration = `Credit Sale to ${sale.customerInfo?.name || 'Customer'} (Receipt #${sale.id})`;
+      } else if (sale.paymentMethod === 'momo') {
+        debitAccount = 'Mobile Money (Momo)';
+        narration = `Momo Payment Sale (Receipt #${sale.id})`;
+      } else if (sale.paymentMethod === 'airtel') {
+        debitAccount = 'Mobile Money (Airtel)';
+        narration = `Airtel Money Sale (Receipt #${sale.id})`;
+      } else if (sale.paymentMethod === 'bank_deposit') {
+        debitAccount = 'Bank Account';
+        narration = `Bank Deposit Sale (Receipt #${sale.id})`;
+      } else if (sale.paymentMethod === 'credit_card') {
+        debitAccount = 'Credit Card Receivables';
+        narration = `Credit Card Sale (Receipt #${sale.id})`;
       }
+      
+      allTransactions.push({
+        id: `S-${sale.id}`,
+        date: sale.timestamp,
+        type: 'Sale',
+        narration: narration,
+        debit: { account: debitAccount, amount: sale.total },
+        credit: { account: 'Sales', amount: sale.total },
+      });
 
       // Cost of Goods Sold (only if we have profit data)
       if (sale.profit !== undefined && sale.profit !== null) {

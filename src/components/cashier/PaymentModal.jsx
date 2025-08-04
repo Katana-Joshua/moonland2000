@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { usePOS } from '@/contexts/POSContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
-import { CreditCard, Banknote, Smartphone, Mail, Printer, BookUser, User } from 'lucide-react';
+import { CreditCard, Banknote, Smartphone, Mail, Printer, BookUser, User, Landmark } from 'lucide-react';
 import Receipt from '@/components/common/Receipt';
 import { formatCurrency } from '@/lib/utils';
 
@@ -42,8 +42,10 @@ const PaymentModal = ({ isOpen, onClose, onReprint }) => {
 
   const paymentMethods = [
     { id: 'cash', label: 'Cash', icon: Banknote },
-    { id: 'card', label: 'Card', icon: CreditCard },
-    { id: 'mobile', label: 'Mobile Money', icon: Smartphone },
+    { id: 'momo', label: 'Momo', icon: Smartphone },
+    { id: 'airtel', label: 'Airtel', icon: Smartphone },
+    { id: 'bank_deposit', label: 'Bank Deposit', icon: Landmark },
+    { id: 'credit_card', label: 'Credit Card', icon: CreditCard },
     { id: 'credit', label: 'Credit', icon: BookUser },
   ];
 
@@ -170,7 +172,7 @@ const PaymentModal = ({ isOpen, onClose, onReprint }) => {
 
             <div>
               <Label className="text-amber-200 mb-3 block">Payment Method</Label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {paymentMethods.map(method => {
                   const Icon = method.icon;
                   return (

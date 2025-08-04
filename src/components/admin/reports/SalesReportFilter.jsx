@@ -195,8 +195,10 @@ const SalesReportFilter = ({ onFilter }) => {
               <SelectContent>
                 <SelectItem value="all">All Methods</SelectItem>
                 <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                <SelectItem value="momo">Momo</SelectItem>
+                <SelectItem value="airtel">Airtel</SelectItem>
+                <SelectItem value="bank_deposit">Bank Deposit</SelectItem>
+                <SelectItem value="credit_card">Credit Card</SelectItem>
                 <SelectItem value="credit">Credit</SelectItem>
               </SelectContent>
             </Select>
