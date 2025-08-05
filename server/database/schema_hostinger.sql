@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS sales (
     total DECIMAL(10,2) NOT NULL,
     total_cost DECIMAL(10,2) NOT NULL,
     profit DECIMAL(10,2) NOT NULL,
-    payment_method ENUM('cash', 'credit', 'mobile_money') NOT NULL,
+    payment_method ENUM('cash', 'credit', 'mobile_money', 'momo', 'airtel', 'bank_deposit', 'credit_card') NOT NULL,
     customer_name VARCHAR(100) NULL,
     customer_phone VARCHAR(20) NULL,
     status ENUM('paid', 'unpaid') DEFAULT 'paid',

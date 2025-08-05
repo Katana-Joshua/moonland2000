@@ -547,7 +547,7 @@ router.get('/sales', async (req, res) => {
 // Process a sale
 router.post('/sales', [
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
-  body('paymentMethod').isIn(['cash', 'credit', 'card', 'mobile']).withMessage('Invalid payment method'),
+  body('paymentMethod').isIn(['cash', 'credit', 'momo', 'airtel', 'bank_deposit', 'credit_card']).withMessage('Invalid payment method'),
   body('total').isFloat({ min: 0 }).withMessage('Total must be a positive number')
 ], async (req, res) => {
   try {
@@ -586,8 +586,10 @@ router.post('/sales', [
     const paymentMethodMap = {
       'cash': 'cash',
       'credit': 'credit', 
-      'card': 'mobile_money',  // Map card to mobile_money for now
-      'mobile': 'mobile_money'
+      'momo': 'momo',
+      'airtel': 'airtel',
+      'bank_deposit': 'bank_deposit',
+      'credit_card': 'credit_card'
     };
     
     const dbPaymentMethod = paymentMethodMap[paymentMethod] || paymentMethod;
