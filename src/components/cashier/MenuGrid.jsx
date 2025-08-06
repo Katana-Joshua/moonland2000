@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePOS } from '@/contexts/POSContext';
-import { Plus, Search, Image as ImageIcon, Barcode } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Barcode, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { buildImageUrl } from '@/lib/api';
@@ -14,8 +14,24 @@ const MenuGrid = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [barcode, setBarcode] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const categoriesRef = useRef(null);
 
   const displayCategories = [{ name: 'All', image: null }, ...categories];
+
+  const scrollCategories = (direction) => {
+    if (categoriesRef.current) {
+      const scrollAmount = 200; // Adjust scroll amount as needed
+      const currentScroll = categoriesRef.current.scrollLeft;
+      const newScroll = direction === 'left' 
+        ? currentScroll - scrollAmount 
+        : currentScroll + scrollAmount;
+      
+      categoriesRef.current.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleBarcodeScan = (e) => {
     e.preventDefault();
@@ -71,9 +87,28 @@ const MenuGrid = () => {
         </form>
       </div>
       
-      {/* Category Filter */}
-      <div className="relative">
-        <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-hide">
+      {/* Category Filter with Scroll Buttons */}
+      <div className="relative group">
+        {/* Left Scroll Button */}
+        <button
+          onClick={() => scrollCategories('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/70 hover:bg-black/90 text-amber-400 rounded-full flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-amber-800/50"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Right Scroll Button */}
+        <button
+          onClick={() => scrollCategories('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/70 hover:bg-black/90 text-amber-400 rounded-full flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-amber-800/50"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <div 
+          ref={categoriesRef}
+          className="flex gap-3 pb-2 overflow-x-auto scrollbar-hide scroll-smooth px-2"
+        >
           {displayCategories.map(category => (
             <motion.div
               key={category.name}
@@ -115,8 +150,6 @@ const MenuGrid = () => {
             </motion.div>
           ))}
         </div>
-        {/* Show scroll indicator */}
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/50 to-transparent pointer-events-none"></div>
       </div>
 
       {/* Menu Items Grid */}

@@ -328,6 +328,24 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  const deleteExpense = async (expenseId) => {
+    try {
+      const response = await posAPI.deleteExpense(expenseId);
+      
+      if (response.success) {
+        setExpenses(prev => prev.filter(expense => expense.id !== expenseId));
+        toast({ title: "Expense Deleted", description: "Expense has been removed successfully." });
+        return true;
+      } else {
+        toast({ title: "Error deleting expense", description: response.message, variant: 'destructive' });
+        return false;
+      }
+    } catch (error) {
+      toast({ title: "Error deleting expense", description: error.message, variant: 'destructive' });
+      return false;
+    }
+  };
+
   // --- Shift ---
   const checkShiftValidity = () => {
     if (!currentShift) return false;
@@ -622,6 +640,7 @@ export const POSProvider = ({ children }) => {
     payCreditSale,
     deleteSale,
     addExpense,
+    deleteExpense,
     startShift,
     endShift,
     checkShiftValidity,

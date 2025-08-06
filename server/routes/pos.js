@@ -1149,6 +1149,42 @@ router.post('/expenses', [
   }
 });
 
+// Delete expense
+router.delete('/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await executeQuery(`
+      DELETE FROM expenses WHERE id = ?
+    `, [id]);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete expense'
+      });
+    }
+
+    if (result.data.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Expense not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Expense deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete expense error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // ===== CATEGORIES ROUTES =====
 
 // Get categories

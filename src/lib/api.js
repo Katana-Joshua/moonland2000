@@ -339,6 +339,13 @@ export const posAPI = {
     return response;
   },
 
+  deleteExpense: async (expenseId) => {
+    const response = await apiRequest(`/pos/expenses/${expenseId}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
+
   // Categories
   getCategories: async () => {
     const response = await apiRequest('/pos/categories');
