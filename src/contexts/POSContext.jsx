@@ -309,13 +309,18 @@ export const POSProvider = ({ children }) => {
       const expenseData = {
         ...expense,
         shiftId: currentShift?.id,
-        cashier: user?.username
+        cashier: user?.username,
+        timestamp: backdateTimestamp || new Date().toISOString()
       };
 
       const response = await posAPI.addExpense(expenseData);
       
       if (response.success) {
         setExpenses(prev => [...prev, response.data]);
+        // Clear backdate after successful expense recording
+        if (backdateTimestamp) {
+          setBackdateTimestamp(null);
+        }
         toast({ title: "Expense Added", description: `${expense.description} has been recorded.` });
         return response.data;
       } else {

@@ -1120,13 +1120,16 @@ router.post('/expenses', [
       });
     }
 
-    const { description, amount, category, shiftId } = req.body;
+    const { description, amount, category, shiftId, timestamp } = req.body;
     const expenseId = `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // Use provided timestamp or current timestamp
+    const expenseTimestamp = timestamp || new Date().toISOString();
 
     const result = await executeQuery(`
-      INSERT INTO expenses (id, description, amount, category, cashier, shift_id)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [expenseId, description, amount, category || null, req.user.username, shiftId || null]);
+      INSERT INTO expenses (id, description, amount, category, cashier, shift_id, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [expenseId, description, amount, category || null, req.user.username, shiftId || null, expenseTimestamp]);
 
     if (!result.success) {
       return res.status(500).json({
@@ -1138,7 +1141,15 @@ router.post('/expenses', [
     res.status(201).json({
       success: true,
       message: 'Expense added successfully',
-      data: { id: expenseId, description, amount }
+      data: { 
+        id: expenseId, 
+        description, 
+        amount, 
+        category: category || null,
+        cashier: req.user.username,
+        shiftId: shiftId || null,
+        timestamp: expenseTimestamp
+      }
     });
   } catch (error) {
     console.error('Add expense error:', error);

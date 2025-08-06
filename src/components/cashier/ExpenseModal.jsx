@@ -5,12 +5,43 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePOS } from '@/contexts/POSContext';
 import { toast } from '@/components/ui/use-toast';
-import { TrendingDown } from 'lucide-react';
+import { TrendingDown, Calendar, Clock } from 'lucide-react';
 
 const ExpenseModal = ({ isOpen, onClose }) => {
-  const { addExpense } = usePOS();
+  const { addExpense, backdateTimestamp, setBackdateTimestamp } = usePOS();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [showBackdate, setShowBackdate] = useState(false);
+  const [backdateDate, setBackdateDate] = useState('');
+  const [backdateTime, setBackdateTime] = useState('');
+
+  const handleBackdateChange = () => {
+    if (backdateDate && backdateTime) {
+      const backdateString = `${backdateDate}T${backdateTime}`;
+      setBackdateTimestamp(backdateString);
+      toast({
+        title: "Backdate Set",
+        description: `Expense will be recorded for ${new Date(backdateString).toLocaleString()}`,
+      });
+    } else {
+      setBackdateTimestamp(null);
+      toast({
+        title: "Backdate Cleared",
+        description: "Expense will be recorded for current time",
+      });
+    }
+  };
+
+  const clearBackdate = () => {
+    setBackdateDate('');
+    setBackdateTime('');
+    setBackdateTimestamp(null);
+    setShowBackdate(false);
+    toast({
+      title: "Backdate Cleared",
+      description: "Expense will be recorded for current time",
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -30,6 +61,10 @@ const ExpenseModal = ({ isOpen, onClose }) => {
 
     setDescription('');
     setAmount('');
+    // Clear backdate after expense is added
+    if (backdateTimestamp) {
+      clearBackdate();
+    }
     onClose();
   };
 
@@ -70,6 +105,83 @@ const ExpenseModal = ({ isOpen, onClose }) => {
               required
             />
           </div>
+
+          {/* Backdate Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-amber-200 flex items-center">
+                <Calendar className="w-4 h-4 mr-2" />
+                Backdate Expense
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBackdate(!showBackdate)}
+                className="text-amber-400 border-amber-700 hover:bg-amber-900/20"
+              >
+                {showBackdate ? 'Hide' : 'Set Backdate'}
+              </Button>
+            </div>
+
+            {showBackdate && (
+              <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-amber-800/30">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="backdate-date" className="text-amber-200 text-sm">
+                      Date
+                    </Label>
+                    <Input
+                      id="backdate-date"
+                      type="date"
+                      value={backdateDate}
+                      onChange={(e) => setBackdateDate(e.target.value)}
+                      className="bg-black/20 border-amber-800/50 text-amber-100 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="backdate-time" className="text-amber-200 text-sm">
+                      Time
+                    </Label>
+                    <Input
+                      id="backdate-time"
+                      type="time"
+                      value={backdateTime}
+                      onChange={(e) => setBackdateTime(e.target.value)}
+                      className="bg-black/20 border-amber-800/50 text-amber-100 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleBackdateChange}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    disabled={!backdateDate || !backdateTime}
+                  >
+                    <Clock className="w-3 h-3 mr-1" />
+                    Apply Backdate
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearBackdate}
+                    className="text-red-400 border-red-700 hover:bg-red-900/20"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                {backdateTimestamp && (
+                  <p className="text-xs text-amber-300/80">
+                    Expense will be recorded for: {new Date(backdateTimestamp).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
