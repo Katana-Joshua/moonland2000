@@ -22,6 +22,7 @@ export const POSProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [currentShift, setCurrentShift] = useState(null);
   const [cart, setCart] = useState([]);
+  const [backdateTimestamp, setBackdateTimestamp] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [receiptSettings, setReceiptSettings] = useState({
     logo: null,
@@ -239,7 +240,8 @@ export const POSProvider = ({ children }) => {
         changeGiven: changeGiven,
         shiftId: currentShift?.id,
         userId: user?.id,
-        username: user?.username
+        username: user?.username,
+        timestamp: backdateTimestamp || new Date().toISOString()
       };
 
       console.log('📤 Sending sale data to API:', saleData);
@@ -251,6 +253,7 @@ export const POSProvider = ({ children }) => {
       if (response.success) {
         setSales(prev => [...prev, response.data]);
         setCart([]);
+        setBackdateTimestamp(null); // Clear backdate after successful sale
         toast({ title: "Sale Completed", description: `Receipt #${response.data.receiptNumber} generated successfully.` });
         return response.data;
       } else {
@@ -279,6 +282,23 @@ export const POSProvider = ({ children }) => {
       }
     } catch (error) {
       toast({ title: "Error processing payment", description: error.message, variant: 'destructive' });
+      return false;
+    }
+  };
+
+  const deleteSale = async (saleId) => {
+    try {
+      const response = await posAPI.deleteSale(saleId);
+      if (response.success) {
+        setSales(prev => prev.filter(sale => sale.id !== saleId));
+        toast({ title: "Sale Deleted", description: response.message });
+        return true;
+      } else {
+        toast({ title: "Error deleting sale", description: response.message, variant: 'destructive' });
+        return false;
+      }
+    } catch (error) {
+      toast({ title: "Error deleting sale", description: error.message, variant: 'destructive' });
       return false;
     }
   };
@@ -587,6 +607,8 @@ export const POSProvider = ({ children }) => {
     currentShift,
     setCurrentShift,
     cart,
+    backdateTimestamp,
+    setBackdateTimestamp,
     staff,
     categories,
     isLoading,
@@ -598,6 +620,7 @@ export const POSProvider = ({ children }) => {
     clearCart,
     processSale,
     payCreditSale,
+    deleteSale,
     addExpense,
     startShift,
     endShift,

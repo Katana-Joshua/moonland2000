@@ -296,6 +296,13 @@ export const posAPI = {
     return response;
   },
 
+  deleteSale: async (saleId) => {
+    const response = await apiRequest(`/pos/sales/${saleId}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
+
   // Shifts
   getShifts: async () => {
     const response = await apiRequest('/pos/shifts');

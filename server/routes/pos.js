@@ -740,6 +740,102 @@ router.put('/sales/:id/pay', async (req, res) => {
   }
 });
 
+// Delete sale (admin only)
+router.delete('/sales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('🗑️ Deleting sale ID:', id);
+
+    // First, get the sale details to restore inventory
+    const saleResult = await executeQuery(`
+      SELECT s.*, GROUP_CONCAT(CONCAT(si.item_id, '|', si.quantity) SEPARATOR '||') as items_data
+      FROM sales s
+      LEFT JOIN sale_items si ON s.id = si.sale_id
+      WHERE s.id = ?
+      GROUP BY s.id
+    `, [id]);
+
+    if (!saleResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch sale details'
+      });
+    }
+
+    if (saleResult.data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sale not found'
+      });
+    }
+
+    const sale = saleResult.data[0];
+    const itemsData = sale.items_data ? sale.items_data.split('||') : [];
+
+    // Start transaction
+    await executeQuery('START TRANSACTION');
+
+    try {
+      // 1. Restore inventory stock for all items in the sale
+      for (const itemData of itemsData) {
+        const [itemId, quantity] = itemData.split('|');
+        if (itemId && quantity) {
+          const restoreResult = await executeQuery(`
+            UPDATE inventory 
+            SET stock = stock + ? 
+            WHERE id = ?
+          `, [parseInt(quantity), itemId]);
+
+          if (!restoreResult.success) {
+            throw new Error(`Failed to restore inventory for item ${itemId}`);
+          }
+
+          console.log(`✅ Restored ${quantity} units for item ${itemId}`);
+        }
+      }
+
+      // 2. Delete sale items (cascade will handle this, but being explicit)
+      const deleteItemsResult = await executeQuery('DELETE FROM sale_items WHERE sale_id = ?', [id]);
+      if (!deleteItemsResult.success) {
+        throw new Error('Failed to delete sale items');
+      }
+
+      // 3. Delete the sale
+      const deleteSaleResult = await executeQuery('DELETE FROM sales WHERE id = ?', [id]);
+      if (!deleteSaleResult.success) {
+        throw new Error('Failed to delete sale');
+      }
+
+      if (deleteSaleResult.data.affectedRows === 0) {
+        throw new Error('Sale not found');
+      }
+
+      // Commit transaction
+      await executeQuery('COMMIT');
+
+      console.log('✅ Sale deleted successfully:', { id, receiptNumber: sale.receipt_number });
+
+      res.json({
+        success: true,
+        message: `Sale #${sale.receipt_number} deleted successfully. Inventory restored.`
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await executeQuery('ROLLBACK');
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Delete sale error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error: ' + error.message
+    });
+  }
+});
+
 // ===== SHIFTS ROUTES =====
 
 // Start a shift

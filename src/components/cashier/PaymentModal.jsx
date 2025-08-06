@@ -89,13 +89,11 @@ const PaymentModal = ({ isOpen, onClose, onReprint }) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const currentCart = [...cart];
-    const saleTimestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Africa/Kampala' });
     const saleData = { 
         paymentMethod, 
         customerInfo, 
         cashReceived: paymentMethod === 'cash' ? parseFloat(cashReceived) : null,
         changeGiven: paymentMethod === 'cash' ? change : null,
-        timestamp: saleTimestamp, // Add Kampala time
     };
     const sale = await processSale(saleData);
     
