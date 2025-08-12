@@ -73,7 +73,7 @@ export const POSProvider = ({ children }) => {
         }
 
       } catch (error) {
-        console.error('Error fetching POS data:', error);
+        console.error('Error fetching POS data:', error); 
         toast({
           title: 'Error loading data',
           description: 'Failed to load data from server',
