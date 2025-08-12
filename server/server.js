@@ -83,7 +83,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files (uploaded images) with CORS headers and optimization
 app.use('/uploads', (req, res, next) => {
   // Set CORS headers for static files
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', '*'); 
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Max-Age', '86400');
