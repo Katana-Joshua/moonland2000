@@ -77,6 +77,81 @@ const BrandingSettings = () => {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="address" className="text-amber-200">Business Address</Label>
+            <Input
+              id="address"
+              name="address"
+              value={settings.address || ''}
+              onChange={handleInputChange}
+              className="bg-black/20 border-amber-800/50 text-amber-100"
+              placeholder="Enter business address"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-amber-200">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={settings.phone || ''}
+                onChange={handleInputChange}
+                className="bg-black/20 border-amber-800/50 text-amber-100"
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-amber-200">Email Address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={settings.email || ''}
+                onChange={handleInputChange}
+                className="bg-black/20 border-amber-800/50 text-amber-100"
+                placeholder="Enter email address"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="website" className="text-amber-200">Website</Label>
+            <Input
+              id="website"
+              name="website"
+              value={settings.website || ''}
+              onChange={handleInputChange}
+              className="bg-black/20 border-amber-800/50 text-amber-100"
+              placeholder="Enter website URL"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="tax_rate" className="text-amber-200">Tax Rate (%)</Label>
+              <Input
+                id="tax_rate"
+                name="tax_rate"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={settings.tax_rate || 0}
+                onChange={handleInputChange}
+                className="bg-black/20 border-amber-800/50 text-amber-100"
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currency" className="text-amber-200">Currency</Label>
+              <Input
+                id="currency"
+                name="currency"
+                value={settings.currency || 'UGX'}
+                onChange={handleInputChange}
+                className="bg-black/20 border-amber-800/50 text-amber-100"
+                placeholder="UGX"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label className="text-amber-200">Business Logo</Label>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 object-contain rounded-md bg-white p-1 flex items-center justify-center">

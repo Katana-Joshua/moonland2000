@@ -13,10 +13,22 @@ const QuickStats = ({ sales, expenses, setActiveTab }) => {
   
   const totalSales = todaySales.reduce((sum, sale) => sum + sale.total, 0);
   const totalExpenses = todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const netProfit = totalSales - totalExpenses;
+  
+  // Fix: Calculate net profit using actual profit from sales, not total sales
+  const totalProfit = todaySales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
+  const netProfit = totalProfit - totalExpenses;
+  
   const transactionCount = todaySales.length;
 
-  console.log('QuickStats calculated values:', { todaySales, todayExpenses, totalSales, totalExpenses, netProfit, transactionCount });
+  console.log('QuickStats calculated values:', { 
+    todaySales, 
+    todayExpenses, 
+    totalSales, 
+    totalExpenses, 
+    totalProfit,
+    netProfit, 
+    transactionCount 
+  });
 
   const stats = [
     {
