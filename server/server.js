@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import cors from 'cors';
 import { testConnection } from './config/database.js';
 import { serveOptimizedImage } from './middleware/imageOptimizer.js';
 
@@ -21,7 +22,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware - Disabled CORS restrictions
+// CORS middleware - Allow all origins
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: process.env.CORS_CREDENTIALS === 'true',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowedHeaders: ['*'],
+  exposedHeaders: ['*'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200,
+  maxAge: 86400 // 24 hours
+}));
+
+// Handle preflight requests globally
+app.options('*', cors());
+
+// Security middleware - More permissive for CORS
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
@@ -40,8 +56,24 @@ app.use(helmet({
   }
 }));
 
-// CORS COMPLETELY DISABLED - No restrictions
-// app.use(cors()); // Commented out - no CORS middleware
+// Global CORS headers for all responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Expose-Headers', '*');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -57,20 +89,17 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// CORS COMPLETELY DISABLED - No preflight handling
-// app.options('*', (req, res) => { ... }); // Commented out
-
-// CORS COMPLETELY DISABLED - No global headers
-// app.use((req, res, next) => { ... }); // Commented out
-
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files (uploaded images) - CORS disabled
+// Serve static files (uploaded images) - with CORS headers
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res, filePath) => {
-    // CORS headers removed - no restrictions
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
     
     // Don't compress images - they're already compressed
@@ -97,39 +126,93 @@ const getContentType = (filePath) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  // Add CORS headers to health check
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
   res.status(200).json({
     success: true,
     message: 'Moon Land POS Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    corsOrigin: '*',
-    corsOrigins: '*',
-    uptime: process.uptime()
+    corsOrigin: process.env.CORS_ORIGIN || '*',
+    corsCredentials: process.env.CORS_CREDENTIALS || 'false',
+    uptime: process.uptime(),
+    headers: req.headers,
+    origin: req.headers.origin
   });
 });
 
 // CORS test endpoint
 app.get('/cors-test', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
   res.json({
     success: true,
     message: 'CORS test successful',
     origin: req.headers.origin,
-    corsOrigin: '*',
-    timestamp: new Date().toISOString()
+    corsOrigin: process.env.CORS_ORIGIN || '*',
+    corsCredentials: process.env.CORS_CREDENTIALS || 'false',
+    timestamp: new Date().toISOString(),
+    headers: req.headers
   });
 });
 
-// Specific route for serving images with CORS headers
-app.get('/uploads/*', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+// Preflight test endpoint
+app.options('/cors-test', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
   res.header('Access-Control-Allow-Headers', '*');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
 });
 
-// Note: BLOB image serving is handled by /api/pos/images/:id route
-// This proxy route was conflicting with the BLOB route
+// CORS debugging endpoint
+app.get('/debug-cors', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
+  res.json({
+    success: true,
+    message: 'CORS debugging information',
+    timestamp: new Date().toISOString(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      CORS_ORIGIN: process.env.CORS_ORIGIN,
+      CORS_CREDENTIALS: process.env.CORS_CREDENTIALS,
+      PORT: process.env.PORT
+    },
+    request: {
+      method: req.method,
+      url: req.url,
+      origin: req.headers.origin,
+      host: req.headers.host,
+      userAgent: req.headers['user-agent'],
+      accept: req.headers.accept,
+      contentType: req.headers['content-type']
+    },
+    headers: req.headers,
+    cors: {
+      enabled: true,
+      origin: process.env.CORS_ORIGIN || '*',
+      credentials: process.env.CORS_CREDENTIALS === 'true',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD']
+    }
+  });
+});
+
+// Preflight for debug endpoint
+app.options('/debug-cors', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
+});
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -137,9 +220,6 @@ app.use('/api/pos', posRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/branding', brandingRoutes);
-
-// CORS COMPLETELY DISABLED - No specific route handling
-// app.use('/api/auth/*', (req, res, next) => { ... }); // Commented out
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -175,8 +255,17 @@ const startServer = async () => {
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
       console.log(`🌐 API Base URL: http://localhost:${PORT}/api`);
-      console.log(`🌍 CORS Origin: * (ALLOW ALL)`);
-      console.log(`🔐 CORS Credentials: disabled`);
+      console.log(`🌍 CORS Configuration:`);
+      console.log(`   - Origin: ${process.env.CORS_ORIGIN || '*'}`);
+      console.log(`   - Credentials: ${process.env.CORS_CREDENTIALS || 'false'}`);
+      console.log(`   - Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD`);
+      console.log(`   - Headers: * (all headers allowed)`);
+      console.log(`   - Preflight: Enabled with 24h cache`);
+      console.log(`🔐 CORS Credentials: ${process.env.CORS_CREDENTIALS === 'true' ? 'enabled' : 'disabled'}`);
+      console.log(`📝 Debug endpoints:`);
+      console.log(`   - /health - Health check with CORS`);
+      console.log(`   - /cors-test - CORS test endpoint`);
+      console.log(`   - /debug-cors - Detailed CORS debugging`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

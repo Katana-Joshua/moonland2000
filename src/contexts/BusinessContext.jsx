@@ -38,14 +38,28 @@ export const businessTypes = [
 
 export const BusinessProvider = ({ children }) => {
   const [businessType, setBusinessTypeInternal] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch business type from database
+  // Check if user is authenticated
+  const isAuthenticated = () => {
+    const token = localStorage.getItem('moonland_token');
+    return !!token;
+  };
+
+  // Fetch business type from database only when authenticated
   useEffect(() => {
     const fetchBusinessType = async () => {
+      // Only fetch if user is authenticated and we haven't initialized yet
+      if (!isAuthenticated() || isInitialized) {
+        return;
+      }
+
       try {
         setIsLoading(true);
+        console.log('🔐 Fetching business type for authenticated user...');
+        
         const businessSettings = await brandingAPI.getBusinessSettings();
         if (businessSettings.business_type && businessSettings.business_type !== 'general') {
           const selectedType = businessTypes.find(t => t.id === businessSettings.business_type);
@@ -53,15 +67,45 @@ export const BusinessProvider = ({ children }) => {
             setBusinessTypeInternal(selectedType);
           }
         }
+        
+        setIsInitialized(true);
+        console.log('✅ Business type loaded successfully');
       } catch (error) {
-        console.error('Error fetching business type:', error);
+        console.error('❌ Error fetching business type:', error);
+        // Mark as initialized even on error
+        setIsInitialized(true);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBusinessType();
-  }, []);
+  }, [isInitialized]);
+
+  // Listen for authentication changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (isAuthenticated() && !isInitialized) {
+        // User just logged in, fetch business type
+        setIsInitialized(false);
+      } else if (!isAuthenticated() && isInitialized) {
+        // User just logged out, reset to defaults
+        setBusinessTypeInternal(null);
+        setIsInitialized(false);
+      }
+    };
+
+    // Listen for storage changes (login/logout)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check on focus (in case of multiple tabs)
+    window.addEventListener('focus', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, [isInitialized]);
 
   const setBusinessType = async (typeId) => {
     try {
