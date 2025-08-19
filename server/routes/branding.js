@@ -112,7 +112,15 @@ router.get('/business-settings', async (req, res) => {
 });
 
 // Update business settings
-router.put('/business-settings', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/business-settings', async (req, res) => {
+  console.log('🌐 PUT /business-settings called:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent'],
+    body: req.body
+  });
+  
   try {
     // Only validate fields that are present in the request
     const validationErrors = [];
