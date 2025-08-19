@@ -33,9 +33,9 @@ const StaffForm = ({ staffMember, onSave, closeDialog }) => {
         permissions: staffMember.permissions || defaultPermissions[staffMember.role],
       });
     } else {
-      setFormData({
-        name: '',
-        role: 'Cashier',
+    setFormData({
+      name: '',
+      role: 'Cashier',
         username: '',
         email: '',
         password: '',
@@ -72,7 +72,7 @@ const StaffForm = ({ staffMember, onSave, closeDialog }) => {
       toast({ title: "Error", description: "Please provide username and password for login access.", variant: "destructive" });
       return;
     }
-
+    
     const dataToSave = { ...formData };
     if (!formData.password) {
       delete dataToSave.password; // Don't save empty password
@@ -246,20 +246,20 @@ const StaffManagement = () => {
               <DataImporter dataType="staff" onImport={handleImport} />
             </DialogContent>
           </Dialog>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-amber-600 hover:bg-amber-700 self-start sm:self-center">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Staff
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass-effect border-amber-800/50">
-              <DialogHeader>
-                <DialogTitle className="text-amber-100">Add New Staff Member</DialogTitle>
-              </DialogHeader>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-amber-600 hover:bg-amber-700 self-start sm:self-center">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Staff
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="glass-effect border-amber-800/50">
+            <DialogHeader>
+              <DialogTitle className="text-amber-100">Add New Staff Member</DialogTitle>
+            </DialogHeader>
               <StaffForm onSave={handleAdd} closeDialog={() => setIsAddDialogOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          </DialogContent>
+        </Dialog>
         </div>
       </div>
 

@@ -103,36 +103,47 @@ export const BusinessProvider = ({ children }) => {
       // Clear all business data from database using proper API calls
       // Note: These endpoints might not exist yet, so we'll handle errors gracefully
       try {
-        await fetch('/api/pos/sales', { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/pos/sales`, { method: 'DELETE' });
       } catch (e) {
         console.log('Sales clear endpoint not available');
       }
       
       try {
-        await fetch('/api/pos/expenses', { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/pos/expenses`, { method: 'DELETE' });
       } catch (e) {
         console.log('Expenses clear endpoint not available');
       }
       
       try {
-        await fetch('/api/pos/inventory', { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/pos/inventory`, { method: 'DELETE' });
       } catch (e) {
         console.log('Inventory clear endpoint not available');
       }
       
       try {
-        await fetch('/api/pos/staff', { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/pos/staff`, { method: 'DELETE' });
       } catch (e) {
         console.log('Staff clear endpoint not available');
       }
       
       try {
-        await fetch('/api/pos/categories', { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/pos/categories`, { method: 'DELETE' });
       } catch (e) {
         console.log('Categories clear endpoint not available');
       }
       
-      // Reset business type
+      // Reset business type in database
+      try {
+        await brandingAPI.updateBusinessSettings({
+          businessType: 'general',
+          businessName: 'Moon Land POS',
+          slogan: 'Your Launchpad for Effortless Sales'
+        });
+      } catch (e) {
+        console.log('Business type reset endpoint not available');
+      }
+      
+      // Reset business type in local state
       setBusinessTypeInternal(null);
       
       toast({
