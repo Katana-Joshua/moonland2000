@@ -26,7 +26,7 @@ export const BrandProvider = ({ children }) => {
     currency: 'UGX',
     timezone: 'Africa/Kampala'
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Check if user is authenticated
@@ -35,17 +35,12 @@ export const BrandProvider = ({ children }) => {
     return !!token;
   };
 
-  // Fetch branding data from database only when authenticated
+  // Fetch branding data from database immediately on app startup (for public display)
   useEffect(() => {
     const fetchBranding = async () => {
-      // Only fetch if user is authenticated and we haven't initialized yet
-      if (!isAuthenticated() || isInitialized) {
-        return;
-      }
-
       try {
         setIsLoading(true);
-        console.log('🔐 Fetching branding data for authenticated user...');
+        console.log('🌐 Fetching branding data for public display...');
         
         const businessSettings = await brandingAPI.getBusinessSettings();
         const brandingAssets = await brandingAPI.getBrandingAssets();
@@ -59,40 +54,32 @@ export const BrandProvider = ({ children }) => {
         });
         
         setIsInitialized(true);
-        console.log('✅ Branding data loaded successfully');
+        console.log('✅ Branding data loaded successfully for public display');
       } catch (error) {
-        console.error('❌ Error fetching branding:', error);
+        console.error('❌ Error fetching branding for public display:', error);
         // Keep default values on error, but mark as initialized
         setIsInitialized(true);
+        console.log('🔄 Using default branding values');
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Always fetch branding data on app startup (public data)
     fetchBranding();
-  }, [isInitialized]);
+  }, []); // Empty dependency array - runs once on mount
 
-  // Listen for authentication changes
+  // Listen for authentication changes to refresh branding data
   useEffect(() => {
     const handleStorageChange = () => {
-      if (isAuthenticated() && !isInitialized) {
-        // User just logged in, fetch branding data
+      if (isAuthenticated() && isInitialized) {
+        // User just logged in, refresh branding data
+        console.log('🔐 User logged in, refreshing branding data...');
         setIsInitialized(false);
+        // This will trigger the first useEffect to run again
       } else if (!isAuthenticated() && isInitialized) {
-        // User just logged out, reset to defaults
-        setBranding({
-          logo: null,
-          businessName: 'Moon Land POS',
-          slogan: 'Your Launchpad for Effortless Sales',
-          address: '123 Cosmic Way, Galaxy City',
-          phone: '+123 456 7890',
-          email: 'info@moonland.com',
-          website: 'www.moonland.com',
-          tax_rate: 0.00,
-          currency: 'UGX',
-          timezone: 'Africa/Kampala'
-        });
-        setIsInitialized(false);
+        // User just logged out, keep current branding (it's public data)
+        console.log('🚪 User logged out, keeping current branding');
       }
     };
 

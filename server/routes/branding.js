@@ -42,10 +42,25 @@ const upload = multer({
 
 // Get business settings
 router.get('/business-settings', async (req, res) => {
+  console.log('🌐 GET /business-settings called:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent']
+  });
+  
   try {
+    console.log('🔍 Querying business_settings table...');
     const result = await executeQuery('SELECT * FROM business_settings ORDER BY id DESC LIMIT 1');
     
+    console.log('📊 Query result:', {
+      success: result.success,
+      dataLength: result.data ? result.data.length : 'no data',
+      error: result.error || 'none'
+    });
+    
     if (!result.success) {
+      console.error('❌ Database query failed:', result.message);
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch business settings'
@@ -65,13 +80,19 @@ router.get('/business-settings', async (req, res) => {
       currency: 'UGX',
       timezone: 'Africa/Kampala'
     };
+    
+    console.log('✅ Returning business settings:', {
+      business_name: settings.business_name,
+      slogan: settings.slogan,
+      business_type: settings.business_type
+    });
 
     res.json({
       success: true,
       data: settings
     });
   } catch (error) {
-    console.error('Get business settings error:', error);
+    console.error('❌ Get business settings error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -239,22 +260,42 @@ router.put('/business-settings', authenticateToken, requireAdmin, async (req, re
 
 // Get branding assets
 router.get('/branding-assets', async (req, res) => {
+  console.log('🌐 GET /branding-assets called:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent']
+  });
+  
   try {
+    console.log('🔍 Querying branding_assets table...');
     const result = await executeQuery('SELECT * FROM branding_assets ORDER BY asset_type');
     
+    console.log('📊 Query result:', {
+      success: result.success,
+      dataLength: result.data ? result.data.length : 'no data',
+      error: result.error || 'none'
+    });
+    
     if (!result.success) {
+      console.error('❌ Database query failed:', result.message);
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch branding assets'
       });
     }
 
+    console.log('✅ Returning branding assets:', {
+      count: result.data.length,
+      types: result.data.map(asset => asset.asset_type)
+    });
+
     res.json({
       success: true,
       data: result.data
     });
   } catch (error) {
-    console.error('Get branding assets error:', error);
+    console.error('❌ Get branding assets error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
