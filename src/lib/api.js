@@ -706,7 +706,8 @@ export const brandingAPI = {
   // Get business settings
   getBusinessSettings: async () => {
     const response = await apiRequest('/branding/business-settings');
-    return response.data;
+    // Backend now sends data directly, not wrapped in response.data
+    return response;
   },
 
   // Update business settings
@@ -721,7 +722,8 @@ export const brandingAPI = {
   // Get branding assets
   getBrandingAssets: async () => {
     const response = await apiRequest('/branding/branding-assets');
-    return response.data;
+    // Backend now sends data directly, not wrapped in response.data
+    return response;
   },
 
   // Upload branding asset

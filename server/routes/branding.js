@@ -69,8 +69,8 @@ router.get('/business-settings', async (req, res) => {
 
     // Return default settings if none exist
     const settings = result.data.length > 0 ? result.data[0] : {
-      business_type: 'general',
-      business_name: 'Moon Land POS',
+      businessType: 'general',
+      businessName: 'Moon Land POS',
       slogan: 'Your Launchpad for Effortless Sales',
       address: '123 Cosmic Way, Galaxy City',
       phone: '+123 456 7890',
@@ -80,17 +80,28 @@ router.get('/business-settings', async (req, res) => {
       currency: 'UGX',
       timezone: 'Africa/Kampala'
     };
+
+    // Map database column names to frontend property names
+    const mappedSettings = {
+      businessType: settings.business_type || 'general',
+      businessName: settings.business_name || 'Moon Land POS',
+      slogan: settings.slogan || 'Your Launchpad for Effortless Sales',
+      address: settings.address || '123 Cosmic Way, Galaxy City',
+      phone: settings.phone || '+123 456 7890',
+      email: settings.email || 'info@moonland.com',
+      website: settings.website || 'www.moonland.com',
+      tax_rate: settings.tax_rate || 0.00,
+      currency: settings.currency || 'UGX',
+      timezone: settings.timezone || 'Africa/Kampala'
+    };
     
-    console.log('✅ Returning business settings:', {
-      business_name: settings.business_name,
-      slogan: settings.slogan,
-      business_type: settings.business_type
+    console.log('✅ Returning mapped business settings:', {
+      businessName: mappedSettings.businessName,
+      slogan: mappedSettings.slogan,
+      businessType: mappedSettings.businessType
     });
 
-    res.json({
-      success: true,
-      data: settings
-    });
+    res.json(mappedSettings);
   } catch (error) {
     console.error('❌ Get business settings error:', error);
     res.status(500).json({
@@ -158,8 +169,8 @@ router.put('/business-settings', authenticateToken, requireAdmin, async (req, re
     }
 
     const {
-      business_type,
-      business_name,
+      businessType,
+      businessName,
       slogan,
       address,
       phone,
@@ -177,8 +188,8 @@ router.put('/business-settings', authenticateToken, requireAdmin, async (req, re
     };
 
     const processedData = {
-      business_type: processField(business_type),
-      business_name: processField(business_name),
+      business_type: processField(businessType),
+      business_name: processField(businessName),
       slogan: processField(slogan),
       address: processField(address),
       phone: processField(phone),
@@ -243,10 +254,35 @@ router.put('/business-settings', authenticateToken, requireAdmin, async (req, re
       });
     }
 
-    res.json({
-      success: true,
-      message: 'Business settings updated successfully'
-    });
+    // Get the updated settings to return to the frontend
+    console.log('🔄 Fetching updated business settings...');
+    const updatedSettingsResult = await executeQuery('SELECT * FROM business_settings ORDER BY id DESC LIMIT 1');
+    
+    if (updatedSettingsResult.success && updatedSettingsResult.data.length > 0) {
+      const updatedSettings = updatedSettingsResult.data[0];
+      
+      // Map database column names to frontend property names
+      const mappedUpdatedSettings = {
+        businessType: updatedSettings.business_type || 'general',
+        businessName: updatedSettings.business_name || 'Moon Land POS',
+        slogan: updatedSettings.slogan || 'Your Launchpad for Effortless Sales',
+        address: updatedSettings.address || '123 Cosmic Way, Galaxy City',
+        phone: updatedSettings.phone || '+123 456 7890',
+        email: updatedSettings.email || 'info@moonland.com',
+        website: updatedSettings.website || 'www.moonland.com',
+        tax_rate: updatedSettings.tax_rate || 0.00,
+        currency: updatedSettings.currency || 'UGX',
+        timezone: updatedSettings.timezone || 'Africa/Kampala'
+      };
+      
+      console.log('✅ Returning updated business settings:', mappedUpdatedSettings);
+      res.json(mappedUpdatedSettings);
+    } else {
+      res.json({
+        success: true,
+        message: 'Business settings updated successfully'
+      });
+    }
   } catch (error) {
     console.error('Update business settings error:', error);
     res.status(500).json({
@@ -290,10 +326,7 @@ router.get('/branding-assets', async (req, res) => {
       types: result.data.map(asset => asset.asset_type)
     });
 
-    res.json({
-      success: true,
-      data: result.data
-    });
+    res.json(result.data);
   } catch (error) {
     console.error('❌ Get branding assets error:', error);
     res.status(500).json({
@@ -306,7 +339,17 @@ router.get('/branding-assets', async (req, res) => {
 // Upload branding asset (logo, favicon, etc.)
 router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('asset'), async (req, res) => {
   try {
+    console.log('🖼️ POST /branding-assets called:', {
+      body: req.body,
+      file: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : 'No file'
+    });
+
     if (!req.file) {
+      console.error('❌ No file uploaded');
       return res.status(400).json({
         success: false,
         message: 'No file uploaded'
@@ -316,6 +359,7 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
     const { asset_type } = req.body;
     
     if (!asset_type || !['logo', 'favicon', 'receipt_header', 'receipt_footer'].includes(asset_type)) {
+      console.error('❌ Invalid asset type:', asset_type);
       return res.status(400).json({
         success: false,
         message: 'Invalid asset type'
@@ -325,12 +369,23 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
     // Handle image upload - store as BLOB like inventory system
     let imageData = null;
     try {
+      console.log('📁 Reading uploaded file...');
       imageData = fs.readFileSync(req.file.path);
       console.log('📁 Branding image file size:', imageData.length, 'bytes');
-      fs.unlinkSync(req.file.path); // Clean up temp file
-      console.log('  ✅ Branding image uploaded as BLOB');
+      
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+      console.log('  ✅ Branding image uploaded as BLOB and temp file cleaned up');
     } catch (error) {
       console.error('❌ Error reading branding image file:', error);
+      // Try to clean up temp file even if read failed
+      try {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+      } catch (cleanupError) {
+        console.error('❌ Error cleaning up temp file:', cleanupError);
+      }
       return res.status(500).json({
         success: false,
         message: 'Error processing image file'
@@ -338,6 +393,7 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
     }
 
     // Check if asset of this type already exists
+    console.log('🔍 Checking for existing asset of type:', asset_type);
     const existingAsset = await executeQuery(
       'SELECT id FROM branding_assets WHERE asset_type = ?',
       [asset_type]
@@ -346,6 +402,7 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
     let result;
     if (existingAsset.success && existingAsset.data.length > 0) {
       // Update existing asset
+      console.log('🔄 Updating existing asset...');
       result = await executeQuery(`
         UPDATE branding_assets 
         SET file_name = ?, file_data = ?, mime_type = ?, file_size = ?
@@ -359,6 +416,7 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
       ]);
     } else {
       // Create new asset
+      console.log('🆕 Creating new asset...');
       result = await executeQuery(`
         INSERT INTO branding_assets (asset_type, file_name, file_data, mime_type, file_size)
         VALUES (?, ?, ?, ?, ?)
@@ -372,21 +430,23 @@ router.post('/branding-assets', authenticateToken, requireAdmin, upload.single('
     }
 
     if (!result.success) {
+      console.error('❌ Database operation failed:', result.message);
       return res.status(500).json({
         success: false,
-        message: 'Failed to save branding asset'
+        message: 'Failed to save branding asset to database'
       });
     }
 
+    console.log('✅ Branding asset saved successfully');
     res.json({
       success: true,
       message: 'Branding asset uploaded successfully'
     });
   } catch (error) {
-    console.error('Upload branding asset error:', error);
+    console.error('❌ Upload branding asset error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error during upload'
     });
   }
 });

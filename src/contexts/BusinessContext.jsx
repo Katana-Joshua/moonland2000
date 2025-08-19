@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { brandingAPI } from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { 
   Utensils, 
@@ -12,7 +12,6 @@ import {
   Wrench,
   Hammer
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 const BusinessContext = createContext();
 
@@ -38,134 +37,108 @@ export const businessTypes = [
 
 export const BusinessProvider = ({ children }) => {
   const [businessType, setBusinessTypeInternal] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is authenticated
-  const isAuthenticated = () => {
-    const token = localStorage.getItem('moonland_token');
-    return !!token;
-  };
-
-  // Fetch business type from database only when authenticated
+  // Load business type from database on mount
   useEffect(() => {
-    const fetchBusinessType = async () => {
-      // Only fetch if user is authenticated and we haven't initialized yet
-      if (!isAuthenticated() || isInitialized) {
-        return;
-      }
-
+    const loadBusinessType = async () => {
       try {
-        setIsLoading(true);
-        console.log('🔐 Fetching business type for authenticated user...');
-        
-        const businessSettings = await brandingAPI.getBusinessSettings();
-        if (businessSettings.business_type && businessSettings.business_type !== 'general') {
-          const selectedType = businessTypes.find(t => t.id === businessSettings.business_type);
-          if (selectedType) {
-            setBusinessTypeInternal(selectedType);
+        // Get business settings from branding API to check business type
+        const response = await fetch('/api/branding/business-settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.businessType && data.businessType !== 'general') {
+            const selectedType = businessTypes.find(t => t.id === data.businessType);
+            if (selectedType) {
+              setBusinessTypeInternal(selectedType);
+            }
           }
         }
-        
-        setIsInitialized(true);
-        console.log('✅ Business type loaded successfully');
       } catch (error) {
-        console.error('❌ Error fetching business type:', error);
-        // Mark as initialized even on error
-        setIsInitialized(true);
+        console.error('Error loading business type:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBusinessType();
-  }, [isInitialized]);
-
-  // Listen for authentication changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (isAuthenticated() && !isInitialized) {
-        // User just logged in, fetch business type
-        setIsInitialized(false);
-      } else if (!isAuthenticated() && isInitialized) {
-        // User just logged out, reset to defaults
-        setBusinessTypeInternal(null);
-        setIsInitialized(false);
-      }
-    };
-
-    // Listen for storage changes (login/logout)
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check on focus (in case of multiple tabs)
-    window.addEventListener('focus', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleStorageChange);
-    };
-  }, [isInitialized]);
+    loadBusinessType();
+  }, []);
 
   const setBusinessType = async (typeId) => {
     try {
       const selectedType = businessTypes.find(t => t.id === typeId);
       if (selectedType) {
-        // Update database
-        await brandingAPI.updateBusinessSettings({ business_type: typeId });
-        
-        setBusinessTypeInternal(selectedType);
-        toast({
-          title: 'Business Type Set!',
-          description: `Your POS is now configured for a ${selectedType.name}.`,
+        // Update business type in database
+        const response = await fetch('/api/branding/business-settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            businessType: typeId,
+            businessName: 'Moon Land POS',
+            slogan: 'Your Launchpad for Effortless Sales'
+          }),
         });
-        navigate('/'); // Navigate to login page after setup
+
+        if (response.ok) {
+          setBusinessTypeInternal(selectedType);
+          toast({
+            title: 'Business Type Set!',
+            description: `Your POS is now configured for a ${selectedType.name}.`,
+          });
+          navigate('/'); // Navigate to login page after setup
+        } else {
+          throw new Error('Failed to update business type');
+        }
       }
     } catch (error) {
       console.error('Error setting business type:', error);
       toast({
         title: 'Error',
         description: 'Failed to set business type. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
   
-  const resetBusinessType = async (shouldNavigate = true) => {
-    try {
-      // Reset in database
-      await brandingAPI.updateBusinessSettings({ business_type: 'general' });
-      
-      setBusinessTypeInternal(null);
-      if (shouldNavigate) {
-        navigate('/setup');
-      }
-    } catch (error) {
-      console.error('Error resetting business type:', error);
+  const resetBusinessType = (shouldNavigate = true) => {
+    setBusinessTypeInternal(null);
+    if (shouldNavigate) {
+      navigate('/setup');
     }
   };
 
-  const clearAllBusinessData = () => {
-    const keysToClear = [
-      'moonland_cart',
-      'moonland_shift',
-      'moonland_expenses',
-      'moonland_credit_sales',
-      'moonland_inventory',
-      'moonland_categories',
-      'moonland_staff',
-      'moonland_sales',
-    ];
-    
-    keysToClear.forEach(key => {
-      localStorage.removeItem(key);
-    });
+  const clearAllBusinessData = async () => {
+    try {
+      // Clear all business data from database
+      const clearPromises = [
+        fetch('/api/pos/sales', { method: 'DELETE' }),
+        fetch('/api/pos/expenses', { method: 'DELETE' }),
+        fetch('/api/pos/inventory', { method: 'DELETE' }),
+        fetch('/api/pos/staff', { method: 'DELETE' }),
+        fetch('/api/pos/categories', { method: 'DELETE' }),
+      ];
 
-    toast({
-      title: 'All Business Data Erased',
-      description: 'You can now set up your new business.',
-      variant: 'destructive',
-    });
+      await Promise.all(clearPromises);
+      
+      // Reset business type
+      setBusinessTypeInternal(null);
+      
+      toast({
+        title: 'All Business Data Erased',
+        description: 'You can now set up your new business.',
+        variant: 'destructive',
+      });
+    } catch (error) {
+      console.error('Error clearing business data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to clear business data. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const value = {
@@ -174,7 +147,7 @@ export const BusinessProvider = ({ children }) => {
     resetBusinessType,
     businessTypes,
     clearAllBusinessData,
-    isLoading
+    isLoading,
   };
 
   return (

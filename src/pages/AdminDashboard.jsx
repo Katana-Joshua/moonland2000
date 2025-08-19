@@ -15,12 +15,25 @@ import {
   Settings,
   BarChart3,
   Menu,
-  X
+  X,
+  Replace
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePOS } from '@/contexts/POSContext';
+import { useBusiness } from '@/contexts/BusinessContext';
 import { Button } from '@/components/ui/button';
 import Loading from '@/components/ui/loading';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import InventoryManagement from '@/components/admin/InventoryManagement';
 import StaffManagement from '@/components/admin/StaffManagement';
 import TransactionHistory from '@/components/admin/TransactionHistory';
@@ -39,12 +52,18 @@ import BrandingSettings from '@/components/admin/BrandingSettings';
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const { isLoading, sales } = usePOS();
+  const { businessType, clearAllBusinessData } = useBusiness();
   const location = useLocation();
   const initialTab = location.state?.selectedTab || 'dashboard';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
+    logout();
+  };
+
+  const handleConfirmReset = () => {
+    clearAllBusinessData();
     logout();
   };
 
@@ -55,7 +74,7 @@ const AdminDashboard = () => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'reports', label: 'Sales Reports', icon: FileText },
-    { id: 'inventory', label: 'Inventory', icon: Box },
+    { id: 'inventory', label: businessType?.features?.inventoryLabel || 'Inventory', icon: Box },
     { id: 'accounting', label: 'Accounting', icon: BarChart3 },
     { id: 'staff', label: 'Staff', icon: Users },
     { id: 'transactions', label: 'Transactions', icon: History },
@@ -130,6 +149,30 @@ const AdminDashboard = () => {
             <LogOut className="w-5 h-5 mr-3" />
             <span>Logout</span>
           </button>
+          
+          {/* Switch Business button */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-full flex items-center p-3 rounded-lg transition-all duration-200 text-amber-300 hover:bg-amber-950/30 mb-4">
+                <Replace className="w-5 h-5 mr-3" />
+                <span>Switch Business</span>
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="glass-effect border-amber-800/50 text-amber-100 bg-gray-900/80">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription className="text-amber-200/80">
+                  Switching business type will permanently erase all existing data for the current business, including sales, inventory, staff records, and expenses. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-transparent hover:bg-amber-950/30 border-amber-800/50 text-amber-100">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmReset} className="bg-red-600 hover:bg-red-700 text-white">
+                  Yes, erase data and switch
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           
           <nav className="flex-grow">
             {tabs.map(tab => (
