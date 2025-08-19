@@ -22,16 +22,32 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
-app.use(helmet());
+// Security middleware - More permissive for CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:", "*"],
+      connectSrc: ["'self'", "*"],
+      fontSrc: ["'self'", "*"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "*"],
+      frameSrc: ["'self'", "*"]
+    }
+  }
+}));
 
-// CORS configuration - Force allow all origins
+// CORS configuration - Force allow all origins with more permissive settings
 app.use(cors({
-  origin: '*',
-  credentials: false,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-API-Key'],
-  exposedHeaders: ['Content-Disposition', 'Content-Length', 'Content-Type'],
+  origin: true, // Allow all origins
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowedHeaders: ['*'], // Allow all headers
+  exposedHeaders: ['*'], // Expose all headers
   optionsSuccessStatus: 200,
   preflightContinue: false
 }));
@@ -50,29 +66,43 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Handle OPTIONS preflight requests explicitly
+// Handle OPTIONS preflight requests explicitly - More permissive
 app.options('*', (req, res) => {
   console.log('🔍 OPTIONS preflight request received from:', req.headers.origin);
   
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-API-Key');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Max-Age', '86400');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.status(200).end();
 });
 
-// Global CORS headers for all routes
+// Global CORS headers for all routes - More permissive
 app.use((req, res, next) => {
   // Log CORS requests for debugging
   if (req.method === 'OPTIONS' || req.headers.origin) {
     console.log('🌍 CORS Request:', req.method, req.path, 'from:', req.headers.origin);
   }
   
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-API-Key');
+  // Set permissive CORS headers
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Max-Age', '86400');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
   
   next();
 });
@@ -165,6 +195,15 @@ app.use('/api/pos', posRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/branding', brandingRoutes);
+
+// Additional CORS handling for auth routes specifically
+app.use('/api/auth/*', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  next();
+});
 
 // 404 handler
 app.use('*', (req, res) => {
