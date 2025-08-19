@@ -7,6 +7,14 @@ import fs from 'fs';
 
 const router = express.Router();
 
+// Handle OPTIONS preflight requests for all branding routes
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.status(200).end();
+});
+
 // Configure multer for file uploads - use disk storage temporarily like inventory system
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -42,6 +50,11 @@ const upload = multer({
 
 // Get business settings
 router.get('/business-settings', async (req, res) => {
+  // Add explicit CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
   try {
     const result = await executeQuery('SELECT * FROM business_settings ORDER BY id DESC LIMIT 1');
     
@@ -239,6 +252,11 @@ router.put('/business-settings', authenticateToken, requireAdmin, async (req, re
 
 // Get branding assets
 router.get('/branding-assets', async (req, res) => {
+  // Add explicit CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
   try {
     const result = await executeQuery('SELECT * FROM branding_assets ORDER BY asset_type');
     
