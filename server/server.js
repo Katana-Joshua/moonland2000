@@ -5,7 +5,6 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import cors from 'cors';
 import { testConnection } from './config/database.js';
 import { serveOptimizedImage } from './middleware/imageOptimizer.js';
 
@@ -22,20 +21,26 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS middleware - Allow all origins
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: process.env.CORS_CREDENTIALS === 'true',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-  allowedHeaders: ['*'],
-  exposedHeaders: ['*'],
-  preflightContinue: false,
-  optionsSuccessStatus: 200,
-  maxAge: 86400 // 24 hours
-}));
-
-// Handle preflight requests globally
-app.options('*', cors());
+// MANUAL CORS - Set headers on every request
+app.use((req, res, next) => {
+  // Set CORS headers manually for ALL requests
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Expose-Headers', '*');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // Handle ALL OPTIONS requests manually
+  if (req.method === 'OPTIONS') {
+    console.log('🌐 MANUAL CORS: Handling OPTIONS request for:', req.url);
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // Security middleware - More permissive for CORS
 app.use(helmet({
@@ -56,45 +61,6 @@ app.use(helmet({
   }
 }));
 
-// Global CORS headers for all responses
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Expose-Headers', '*');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  // Handle preflight requests globally
-  if (req.method === 'OPTIONS') {
-    console.log('🌐 Global OPTIONS preflight request:', {
-      url: req.url,
-      origin: req.headers.origin,
-      method: req.method
-    });
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
-
-// Global OPTIONS handler for all routes
-app.options('*', (req, res) => {
-  console.log('🌐 Global OPTIONS handler:', {
-    url: req.url,
-    origin: req.headers.origin,
-    method: req.method
-  });
-  
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(200).end();
-});
-
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
@@ -113,7 +79,7 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files (uploaded images) - with CORS headers
+// Serve static files (uploaded images) - with manual CORS headers
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res, filePath) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -144,10 +110,10 @@ const getContentType = (filePath) => {
   return contentTypes[ext] || 'application/octet-stream';
 };
 
-// Health check endpoint
+// Health check endpoint with manual CORS
 app.get('/health', (req, res) => {
-  // Add CORS headers to health check
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   
@@ -156,54 +122,57 @@ app.get('/health', (req, res) => {
     message: 'Moon Land POS Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN || '*',
-    corsCredentials: process.env.CORS_CREDENTIALS || 'false',
+    corsOrigin: 'MANUAL CORS - ALLOW ALL',
+    corsCredentials: 'disabled',
     uptime: process.uptime(),
     headers: req.headers,
     origin: req.headers.origin
   });
 });
 
-// CORS test endpoint
+// CORS test endpoint with manual CORS
 app.get('/cors-test', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   
   res.json({
     success: true,
-    message: 'CORS test successful',
+    message: 'MANUAL CORS test successful',
     origin: req.headers.origin,
-    corsOrigin: process.env.CORS_ORIGIN || '*',
-    corsCredentials: process.env.CORS_CREDENTIALS || 'false',
+    corsOrigin: 'MANUAL CORS - ALLOW ALL',
+    corsCredentials: 'disabled',
     timestamp: new Date().toISOString(),
     headers: req.headers
   });
 });
 
-// Preflight test endpoint
+// Preflight test endpoint with manual CORS
 app.options('/cors-test', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Max-Age', '86400');
   res.status(200).end();
 });
 
-// CORS debugging endpoint
+// CORS debugging endpoint with manual CORS
 app.get('/debug-cors', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', '*');
   
   res.json({
     success: true,
-    message: 'CORS debugging information',
+    message: 'MANUAL CORS debugging information',
     timestamp: new Date().toISOString(),
     environment: {
       NODE_ENV: process.env.NODE_ENV,
-      CORS_ORIGIN: process.env.CORS_ORIGIN,
-      CORS_CREDENTIALS: process.env.CORS_CREDENTIALS,
+      CORS_ORIGIN: 'MANUAL CORS - ALLOW ALL',
+      CORS_CREDENTIALS: 'disabled',
       PORT: process.env.PORT
     },
     request: {
@@ -218,32 +187,34 @@ app.get('/debug-cors', (req, res) => {
     headers: req.headers,
     cors: {
       enabled: true,
-      origin: process.env.CORS_ORIGIN || '*',
-      credentials: process.env.CORS_CREDENTIALS === 'true',
+      origin: 'MANUAL CORS - ALLOW ALL',
+      credentials: false,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD']
     }
   });
 });
 
-// Preflight for debug endpoint
+// Preflight for debug endpoint with manual CORS
 app.options('/debug-cors', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Max-Age', '86400');
   res.status(200).end();
 });
 
-// Login CORS test endpoint
+// Login CORS test endpoint with manual CORS
 app.post('/login-test', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
   
   res.json({
     success: true,
-    message: 'Login CORS test successful',
+    message: 'MANUAL CORS login test successful',
     timestamp: new Date().toISOString(),
     method: req.method,
     origin: req.headers.origin,
@@ -255,9 +226,10 @@ app.post('/login-test', (req, res) => {
   });
 });
 
-// Preflight for login test
+// Preflight for login test with manual CORS
 app.options('/login-test', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  // Manual CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
@@ -305,23 +277,24 @@ const startServer = async () => {
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
       console.log(`🌐 API Base URL: http://localhost:${PORT}/api`);
-      console.log(`🌍 CORS Configuration:`);
-      console.log(`   - Origin: ${process.env.CORS_ORIGIN || '*'}`);
-      console.log(`   - Credentials: ${process.env.CORS_CREDENTIALS || 'false'}`);
+      console.log(`🌍 CORS Configuration: MANUAL CORS - BULLETPROOF`);
+      console.log(`   - Origin: MANUAL CORS - ALLOW ALL (*)`);
+      console.log(`   - Credentials: disabled`);
       console.log(`   - Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD`);
-      console.log(`   - Headers: * (all headers allowed)`);
-      console.log(`   - Preflight: Enabled with 24h cache`);
-      console.log(`🔐 CORS Credentials: ${process.env.CORS_CREDENTIALS === 'true' ? 'enabled' : 'disabled'}`);
+      console.log(`   - Headers: ALL HEADERS ALLOWED (*)`);
+      console.log(`   - Preflight: MANUAL HANDLING - 24h cache`);
+      console.log(`🔐 CORS Credentials: disabled`);
       console.log(`📝 Debug endpoints:`);
-      console.log(`   - /health - Health check with CORS`);
-      console.log(`   - /cors-test - CORS test endpoint`);
-      console.log(`   - /debug-cors - Detailed CORS debugging`);
-      console.log(`   - /login-test - Login CORS test endpoint`);
+      console.log(`   - /health - Health check with MANUAL CORS`);
+      console.log(`   - /cors-test - CORS test endpoint with MANUAL CORS`);
+      console.log(`   - /debug-cors - Detailed CORS debugging with MANUAL CORS`);
+      console.log(`   - /login-test - Login CORS test endpoint with MANUAL CORS`);
       console.log(`🔍 Environment Variables Check:`);
       console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'NOT SET'}`);
-      console.log(`   - CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'NOT SET (using default: *)'}`);
-      console.log(`   - CORS_CREDENTIALS: ${process.env.CORS_CREDENTIALS || 'NOT SET (using default: false)'}`);
+      console.log(`   - CORS_ORIGIN: MANUAL CORS - ALLOW ALL (*)`);
+      console.log(`   - CORS_CREDENTIALS: disabled`);
       console.log(`   - PORT: ${process.env.PORT || 'NOT SET (using default: 5000)'}`);
+      console.log(`🚨 MANUAL CORS MODE: ALL ROUTES WILL HAVE CORS HEADERS`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

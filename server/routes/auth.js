@@ -7,46 +7,6 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// CORS middleware for auth routes
-router.use((req, res, next) => {
-  console.log('🔐 Auth route CORS middleware:', {
-    method: req.method,
-    url: req.url,
-    origin: req.headers.origin,
-    userAgent: req.headers['user-agent']
-  });
-  
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  // Log the headers being set
-  console.log('📋 CORS headers set:', {
-    'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
-    'Access-Control-Allow-Methods': res.get('Access-Control-Allow-Methods'),
-    'Access-Control-Allow-Headers': res.get('Access-Control-Allow-Headers')
-  });
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log('🔄 Handling OPTIONS preflight request');
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
-
-// Handle OPTIONS preflight for all auth routes
-router.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(200).end();
-});
-
 // Login route
 router.post('/login', [
   body('username').notEmpty().withMessage('Username is required'),
