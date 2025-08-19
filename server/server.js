@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js';
 import posRoutes from './routes/pos.js';
 import accountingRoutes from './routes/accounting.js';
 import uploadRoutes from './routes/upload.js';
+import brandingRoutes from './routes/branding.js';
 
 // Load environment variables
 dotenv.config();
@@ -163,6 +164,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/pos', posRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/branding', brandingRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

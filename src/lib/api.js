@@ -700,6 +700,57 @@ export const uploadAPI = {
   }
 };
 
+// ===== BRANDING & BUSINESS SETTINGS API =====
+
+export const brandingAPI = {
+  // Get business settings
+  getBusinessSettings: async () => {
+    const response = await apiRequest('/branding/business-settings');
+    return response.data;
+  },
+
+  // Update business settings
+  updateBusinessSettings: async (settings) => {
+    const response = await apiRequest('/branding/business-settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return response;
+  },
+
+  // Get branding assets
+  getBrandingAssets: async () => {
+    const response = await apiRequest('/branding/branding-assets');
+    return response.data;
+  },
+
+  // Upload branding asset
+  uploadBrandingAsset: async (assetType, file) => {
+    const formData = new FormData();
+    formData.append('asset', file);
+    formData.append('asset_type', assetType);
+
+    const response = await apiRequest('/branding/branding-assets', {
+      method: 'POST',
+      body: formData,
+    });
+    return response;
+  },
+
+  // Get specific branding asset URL
+  getBrandingAssetUrl: (assetType) => {
+    return `${API_BASE_URL}/branding/branding-assets/${assetType}`;
+  },
+
+  // Delete branding asset
+  deleteBrandingAsset: async (assetType) => {
+    const response = await apiRequest(`/branding/branding-assets/${assetType}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
+};
+
 // Export default API object
 export default {
   auth: authAPI,

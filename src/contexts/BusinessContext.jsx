@@ -1,5 +1,5 @@
-import React, { createContext, useContext } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { brandingAPI } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 import { 
   Utensils, 
@@ -37,25 +37,67 @@ export const businessTypes = [
 ];
 
 export const BusinessProvider = ({ children }) => {
-  const [businessType, setBusinessTypeInternal] = useLocalStorage('moonland_business_type', null);
+  const [businessType, setBusinessTypeInternal] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const setBusinessType = (typeId) => {
-    const selectedType = businessTypes.find(t => t.id === typeId);
-    if (selectedType) {
-      setBusinessTypeInternal(selectedType);
+  // Fetch business type from database
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        setIsLoading(true);
+        const businessSettings = await brandingAPI.getBusinessSettings();
+        if (businessSettings.business_type && businessSettings.business_type !== 'general') {
+          const selectedType = businessTypes.find(t => t.id === businessSettings.business_type);
+          if (selectedType) {
+            setBusinessTypeInternal(selectedType);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching business type:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBusinessType();
+  }, []);
+
+  const setBusinessType = async (typeId) => {
+    try {
+      const selectedType = businessTypes.find(t => t.id === typeId);
+      if (selectedType) {
+        // Update database
+        await brandingAPI.updateBusinessSettings({ business_type: typeId });
+        
+        setBusinessTypeInternal(selectedType);
+        toast({
+          title: 'Business Type Set!',
+          description: `Your POS is now configured for a ${selectedType.name}.`,
+        });
+        navigate('/'); // Navigate to login page after setup
+      }
+    } catch (error) {
+      console.error('Error setting business type:', error);
       toast({
-        title: 'Business Type Set!',
-        description: `Your POS is now configured for a ${selectedType.name}.`,
+        title: 'Error',
+        description: 'Failed to set business type. Please try again.',
+        variant: 'destructive'
       });
-      navigate('/'); // Navigate to login page after setup
     }
   };
   
-  const resetBusinessType = (shouldNavigate = true) => {
-    setBusinessTypeInternal(null);
-    if (shouldNavigate) {
-      navigate('/setup');
+  const resetBusinessType = async (shouldNavigate = true) => {
+    try {
+      // Reset in database
+      await brandingAPI.updateBusinessSettings({ business_type: 'general' });
+      
+      setBusinessTypeInternal(null);
+      if (shouldNavigate) {
+        navigate('/setup');
+      }
+    } catch (error) {
+      console.error('Error resetting business type:', error);
     }
   };
 
@@ -88,6 +130,7 @@ export const BusinessProvider = ({ children }) => {
     resetBusinessType,
     businessTypes,
     clearAllBusinessData,
+    isLoading
   };
 
   return (
