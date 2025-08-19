@@ -32,6 +32,9 @@ import AccountingDashboard from '@/components/admin/accounting/AccountingDashboa
 import ShiftLog from '@/components/admin/ShiftLog';
 import ReceiptCustomization from '@/components/admin/ReceiptCustomization';
 import SalesChart from '@/components/admin/SalesChart';
+import DashboardOverview from '@/components/admin/dashboard/DashboardOverview';
+import AdminTerminal from '@/components/admin/AdminTerminal';
+import BrandingSettings from '@/components/admin/BrandingSettings';
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
@@ -61,6 +64,8 @@ const AdminDashboard = () => {
     { id: 'shifts', label: 'Shift Log', icon: History },
     { id: 'low-stock', label: 'Low Stock', icon: Box },
     { id: 'settings', label: 'Receipt Settings', icon: Settings },
+    { id: 'terminal', label: 'Manual Entry', icon: Menu },
+    { id: 'branding', label: 'Branding', icon: Settings },
   ];
 
   const handleTabClick = (tabId) => {
@@ -92,23 +97,14 @@ const AdminDashboard = () => {
         return <LowStockAlerts />;
       case 'settings':
         return <ReceiptCustomization />;
+      case 'terminal':
+        return <AdminTerminal />;
+      case 'branding':
+        return <BrandingSettings />;
       case 'dashboard':
       default:
-        return <DashboardOverview handleTabClick={handleTabClick} />;
+        return <DashboardOverview setActiveTab={handleTabClick} />;
     }
-  };
-
-  const DashboardOverview = ({ handleTabClick }) => {
-    return (
-      <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <SalesChart sales={sales} />
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <LowStockAlerts />
-        </motion.div>
-      </div>
-    );
   };
 
   return (
@@ -125,15 +121,25 @@ const AdminDashboard = () => {
               <X className="w-6 h-6" />
             </button>
           </div>
-          <nav className="flex-grow mt-6">
+          
+          {/* Logout button positioned at top for easy access */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-red-900/50 text-red-300 mb-4"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            <span>Logout</span>
+          </button>
+          
+          <nav className="flex-grow">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
                 className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'bg-amber-900/50 text-amber-300'
-                    : 'hover:bg-amber-950/30'
+                    ? 'border-l-4 border-amber-400 bg-amber-900/10 text-amber-300'
+                    : 'hover:bg-amber-950/30 border-l-4 border-transparent'
                 }`}
               >
                 <tab.icon className="w-5 h-5 mr-3" />
@@ -141,15 +147,6 @@ const AdminDashboard = () => {
               </button>
             ))}
           </nav>
-          <div className="space-y-2">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-red-900/50 text-red-300"
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              <span>Logout</span>
-            </button>
-          </div>
         </aside>
 
         {/* Main Content */}

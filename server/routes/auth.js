@@ -25,11 +25,13 @@ router.post('/login', [
 
     const { username, password } = req.body;
 
-    // Find user by username
-    const result = await executeQuery(
-      'SELECT id, username, password_hash, role FROM users WHERE username = ?',
-      [username]
-    );
+    // Find user by username and get staff information
+    const result = await executeQuery(`
+      SELECT u.id, u.username, u.password_hash, u.role, s.name, s.email
+      FROM users u
+      LEFT JOIN staff s ON u.id = s.user_id
+      WHERE u.username = ?
+    `, [username]);
 
     if (!result.success) {
       return res.status(500).json({
@@ -61,7 +63,8 @@ router.post('/login', [
       { 
         userId: user.id, 
         username: user.username, 
-        role: user.role 
+        role: user.role,
+        name: user.name
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
@@ -167,7 +170,8 @@ router.post('/refresh', authenticateToken, async (req, res) => {
       { 
         userId: user.id, 
         username: user.username, 
-        role: user.role 
+        role: user.role,
+        name: user.name
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
@@ -181,7 +185,8 @@ router.post('/refresh', authenticateToken, async (req, res) => {
         user: {
           id: user.id,
           username: user.username,
-          role: user.role
+          role: user.role,
+          name: user.name
         }
       }
     });
@@ -206,10 +211,12 @@ router.get('/profile', async (req, res) => {
       });
     }
 
-    const result = await executeQuery(
-      'SELECT id, username, role, created_at FROM users WHERE id = ?',
-      [req.user.id]
-    );
+    const result = await executeQuery(`
+      SELECT u.id, u.username, u.role, u.created_at, s.name, s.email
+      FROM users u
+      LEFT JOIN staff s ON u.id = s.user_id
+      WHERE u.id = ?
+    `, [req.user.id]);
 
     if (!result.success || result.data.length === 0) {
       return res.status(404).json({

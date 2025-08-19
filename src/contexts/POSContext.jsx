@@ -22,7 +22,7 @@ export const POSProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [currentShift, setCurrentShift] = useState(null);
   const [cart, setCart] = useState([]);
-  const [backdateTimestamp, setBackdateTimestamp] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [receiptSettings, setReceiptSettings] = useState({
     logo: null,
@@ -158,6 +158,16 @@ export const POSProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [currentShift]);
 
+  // --- Inventory Management ---
+  const refreshInventory = async () => {
+    try {
+      const inventoryData = await posAPI.getInventory();
+      setInventory(inventoryData || []);
+    } catch (error) {
+      console.error('Error refreshing inventory:', error);
+    }
+  };
+
   // --- Cart ---
   const addToCart = (item) => {
     setCart(prevCart => {
@@ -240,8 +250,8 @@ export const POSProvider = ({ children }) => {
         changeGiven: changeGiven,
         shiftId: currentShift?.id,
         userId: user?.id,
-        username: user?.username,
-        timestamp: backdateTimestamp || new Date().toISOString()
+        cashierName: user?.name || user?.username, // Use full name for receipts
+        timestamp: new Date().toISOString()
       };
 
       console.log('📤 Sending sale data to API:', saleData);
@@ -253,7 +263,26 @@ export const POSProvider = ({ children }) => {
       if (response.success) {
         setSales(prev => [...prev, response.data]);
         setCart([]);
-        setBackdateTimestamp(null); // Clear backdate after successful sale
+        
+        // Update inventory state to reflect stock reduction
+        setInventory(prevInventory => {
+          console.log('🔄 Updating inventory after sale:', { cart, prevInventory });
+          const updatedInventory = prevInventory.map(item => {
+            const soldItem = cart.find(cartItem => cartItem.id === item.id);
+            if (soldItem) {
+              const newStock = Math.max(0, item.stock - soldItem.quantity);
+              console.log(`📦 Item ${item.name}: ${item.stock} → ${newStock} (sold ${soldItem.quantity})`);
+              return {
+                ...item,
+                stock: newStock
+              };
+            }
+            return item;
+          });
+          console.log('✅ Updated inventory:', updatedInventory);
+          return updatedInventory;
+        });
+        
         toast({ title: "Sale Completed", description: `Receipt #${response.data.receiptNumber} generated successfully.` });
         return response.data;
       } else {
@@ -288,9 +317,36 @@ export const POSProvider = ({ children }) => {
 
   const deleteSale = async (saleId) => {
     try {
+      // Get the sale details before deleting to restore inventory
+      const saleToDelete = sales.find(sale => sale.id === saleId);
+      if (!saleToDelete) {
+        toast({ title: "Error", description: "Sale not found", variant: 'destructive' });
+        return false;
+      }
+
       const response = await posAPI.deleteSale(saleId);
       if (response.success) {
         setSales(prev => prev.filter(sale => sale.id !== saleId));
+        
+        // Restore inventory by adding back the sold quantities
+        setInventory(prevInventory => {
+          console.log('🔄 Restoring inventory after sale deletion:', { saleToDelete, prevInventory });
+          const updatedInventory = prevInventory.map(item => {
+            const soldItem = saleToDelete.items?.find(saleItem => saleItem.id === item.id);
+            if (soldItem) {
+              const newStock = item.stock + soldItem.quantity;
+              console.log(`📦 Item ${item.name}: ${item.stock} → ${newStock} (restored ${soldItem.quantity})`);
+              return {
+                ...item,
+                stock: newStock
+              };
+            }
+            return item;
+          });
+          console.log('✅ Restored inventory:', updatedInventory);
+          return updatedInventory;
+        });
+        
         toast({ title: "Sale Deleted", description: response.message });
         return true;
       } else {
@@ -309,18 +365,14 @@ export const POSProvider = ({ children }) => {
       const expenseData = {
         ...expense,
         shiftId: currentShift?.id,
-        cashier: user?.username,
-        timestamp: backdateTimestamp || new Date().toISOString()
+        cashier: user?.name || user?.username, // Use full name for expenses
+        timestamp: new Date().toISOString()
       };
 
       const response = await posAPI.addExpense(expenseData);
       
       if (response.success) {
         setExpenses(prev => [...prev, response.data]);
-        // Clear backdate after successful expense recording
-        if (backdateTimestamp) {
-          setBackdateTimestamp(null);
-        }
         toast({ title: "Expense Added", description: `${expense.description} has been recorded.` });
         return response.data;
       } else {
@@ -630,8 +682,7 @@ export const POSProvider = ({ children }) => {
     currentShift,
     setCurrentShift,
     cart,
-    backdateTimestamp,
-    setBackdateTimestamp,
+
     staff,
     categories,
     isLoading,
@@ -660,6 +711,7 @@ export const POSProvider = ({ children }) => {
     removeCategory,
     updateCategory,
     updateReceiptSettings,
+    refreshInventory,
   };
 
   return (

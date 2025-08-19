@@ -22,10 +22,12 @@ export const authenticateToken = async (req, res, next) => {
     console.log('🔐 Auth middleware - Token decoded:', decoded);
     
     // Verify user still exists in database
-    const result = await executeQuery(
-      'SELECT id, username, role FROM users WHERE id = ?',
-      [decoded.userId]
-    );
+    const result = await executeQuery(`
+      SELECT u.id, u.username, u.role, s.name, s.email
+      FROM users u
+      LEFT JOIN staff s ON u.id = s.user_id
+      WHERE u.id = ?
+    `, [decoded.userId]);
 
     if (!result.success || result.data.length === 0) {
       console.log('❌ Auth middleware - User not found in database');

@@ -9,7 +9,10 @@ import CashierDashboard from '@/pages/CashierDashboard.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { POSProvider } from '@/contexts/POSContext.jsx';
 import { AccountingProvider } from '@/contexts/AccountingContext.jsx';
+import { BrandProvider } from '@/contexts/BrandContext.jsx';
+import { BusinessProvider } from '@/contexts/BusinessContext.jsx';
 import CustomerDebtHistory from '@/pages/CustomerDebtHistory.jsx';
+import SetupWizard from '@/pages/SetupWizard.jsx';
 import ProtectedRoute from '@/components/auth/ProtectedRoute.jsx';
 
 function App() {
@@ -17,44 +20,49 @@ function App() {
     <AuthProvider>
       <POSProvider>
         <Router>
-          <Helmet>
-            <title>Moon Land - Point of Sale System</title>
-            <meta name="description" content="Modern point of sale system for bars and restaurants, featuring admin and cashier dashboards, inventory management, and sales reporting." />
-          </Helmet>
-          <div className="min-h-screen bar-gradient">
-            <Routes>
-              <Route path="/" element={<LoginPage />} />
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AccountingProvider>
-                      <AdminDashboard />
-                    </AccountingProvider>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/cashier" 
-                element={
-                  <ProtectedRoute requiredRole="cashier">
-                    <CashierDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/customer-debts/:customerName" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AccountingProvider>
-                      <CustomerDebtHistory />
-                    </AccountingProvider>
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
-            <Toaster />
-          </div>
+          <BrandProvider>
+            <BusinessProvider>
+              <Helmet>
+                <title>Moon Land - Point of Sale System</title>
+                <meta name="description" content="Modern point of sale system for bars and restaurants, featuring admin and cashier dashboards, inventory management, and sales reporting." />
+              </Helmet>
+              <div className="min-h-screen bar-gradient">
+                <Routes>
+                  <Route path="/" element={<LoginPage />} />
+                  <Route path="/setup" element={<SetupWizard />} />
+                  <Route 
+                    path="/admin" 
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <AccountingProvider>
+                          <AdminDashboard />
+                        </AccountingProvider>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/cashier" 
+                    element={
+                      <ProtectedRoute requiredRole="cashier">
+                        <CashierDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/customer-debts/:customerName" 
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <AccountingProvider>
+                          <CustomerDebtHistory />
+                        </AccountingProvider>
+                      </ProtectedRoute>
+                    } 
+                  />
+                </Routes>
+                <Toaster />
+              </div>
+            </BusinessProvider>
+          </BrandProvider>
         </Router>
       </POSProvider>
     </AuthProvider>

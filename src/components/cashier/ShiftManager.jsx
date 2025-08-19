@@ -67,7 +67,7 @@ const ShiftManager = () => {
 
     setIsLoading(true);
     try {
-      await startShift(user.id, user.username, startingCash);
+      await startShift(user.id, user.name || user.username, startingCash);
     } catch (error) {
       console.error('Error starting shift:', error);
     } finally {
@@ -120,7 +120,7 @@ const ShiftManager = () => {
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-amber-400" />
                     <Input
-                      value={user?.username || ''}
+                      value={user?.name || user?.username || ''}
                       className="pl-10 bg-black/20 border-amber-800/50 text-amber-100"
                       readOnly
                     />

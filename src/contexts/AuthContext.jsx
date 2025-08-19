@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data.user);
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${response.data.user.username}!`,
+          description: `Welcome back, ${response.data.user.name || response.data.user.username}!`,
         });
         return { success: true, user: response.data.user };
       } else {

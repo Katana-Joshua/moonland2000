@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,50 +7,212 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { usePOS } from '@/contexts/POSContext.jsx';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, User, KeyRound, Shield, Edit } from 'lucide-react';
+import { Plus, Trash2, User, KeyRound, Shield, Edit, Upload } from 'lucide-react';
+import DataImporter from '@/components/admin/DataImporter';
+import { availablePermissions, defaultPermissions } from '@/contexts/dataManager';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const StaffForm = ({ staffMember, onSave, closeDialog }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    role: 'Cashier',
+    username: '',
+    email: '',
+    password: '',
+    permissions: defaultPermissions.Cashier,
+  });
+
+  useEffect(() => {
+    if (staffMember) {
+      setFormData({
+        name: staffMember.name,
+        role: staffMember.role,
+        username: staffMember.username || '',
+        email: staffMember.email || '',
+        password: '', // Don't pre-fill password for security
+        permissions: staffMember.permissions || defaultPermissions[staffMember.role],
+      });
+    } else {
+      setFormData({
+        name: '',
+        role: 'Cashier',
+        username: '',
+        email: '',
+        password: '',
+        permissions: defaultPermissions.Cashier,
+      });
+    }
+  }, [staffMember]);
+
+  const handleRoleChange = (e) => {
+    const newRole = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      role: newRole,
+      permissions: defaultPermissions[newRole] || [],
+    }));
+  };
+
+  const handlePermissionChange = (permissionId) => {
+    setFormData(prev => {
+      const newPermissions = prev.permissions.includes(permissionId)
+        ? prev.permissions.filter(p => p !== permissionId)
+        : [...prev.permissions, permissionId];
+      return { ...prev, permissions: newPermissions };
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name) {
+      toast({ title: "Error", description: "Please provide a name.", variant: "destructive" });
+      return;
+    }
+    if (!staffMember && (!formData.username || !formData.password)) {
+      toast({ title: "Error", description: "Please provide username and password for login access.", variant: "destructive" });
+      return;
+    }
+
+    const dataToSave = { ...formData };
+    if (!formData.password) {
+      delete dataToSave.password; // Don't save empty password
+    }
+    
+    onSave(dataToSave);
+    closeDialog();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label className="text-amber-200">Full Name *</Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          className="bg-black/20 border-amber-800/50 text-amber-100"
+          required
+        />
+      </div>
+      
+      <div>
+        <Label className="text-amber-200">Role</Label>
+        <select
+          value={formData.role}
+          onChange={handleRoleChange}
+          className="w-full h-10 px-3 rounded-md bg-black/20 border border-amber-800/50 text-amber-100"
+        >
+          <option value="Cashier">Cashier</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+
+      <div>
+        <Label className="text-amber-200">Username {staffMember ? '(leave blank to keep current)' : '*'}</Label>
+        <Input
+          value={formData.username}
+          onChange={(e) => setFormData({...formData, username: e.target.value})}
+          className="bg-black/20 border-amber-800/50 text-amber-100"
+          required={!staffMember}
+          placeholder={staffMember ? "Enter new username or leave blank" : "Enter username for login"}
+        />
+      </div>
+
+      <div>
+        <Label className="text-amber-200">Email {staffMember ? '(leave blank to keep current)' : '*'}</Label>
+        <Input
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          className="bg-black/20 border-amber-800/50 text-amber-100"
+          required={!staffMember}
+          placeholder={staffMember ? "Enter new email or leave blank" : "Enter email address"}
+        />
+      </div>
+
+      {!staffMember && (
+        <div>
+          <Label className="text-amber-200">Password *</Label>
+          <Input
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            className="bg-black/20 border-amber-800/50 text-amber-100"
+            required
+            minLength="6"
+            placeholder="Enter password for login"
+          />
+        </div>
+      )}
+      
+      <div>
+        <Label className="text-amber-200">Permissions</Label>
+        <div className="space-y-2 max-h-40 overflow-y-auto bg-black/20 p-3 rounded-md">
+          {availablePermissions.map(permission => (
+            <div key={permission.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={permission.id}
+                checked={formData.permissions.includes(permission.id)}
+                onCheckedChange={() => handlePermissionChange(permission.id)}
+                className="border-amber-600 data-[state=checked]:bg-amber-600"
+              />
+              <Label htmlFor={permission.id} className="text-sm text-amber-200 cursor-pointer">
+                <div className="font-medium">{permission.label}</div>
+                <div className="text-xs text-amber-200/60">{permission.description}</div>
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
+          {staffMember ? 'Update Staff Member' : 'Add Staff Member'}
+        </Button>
+        <Button type="button" variant="outline" onClick={closeDialog}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+};
 
 const StaffManagement = () => {
   const { staff, addStaffMember, removeStaffMember, updateStaffMember } = usePOS();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    role: 'Cashier',
-    pin: ''
-  });
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      role: 'Cashier',
-      pin: ''
-    });
-  };
-
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.pin) {
-      toast({
-        title: "Error",
-        description: "Please provide a name and a PIN.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (formData.pin.length < 4) {
-      toast({
-        title: "Error",
-        description: "PIN must be at least 4 digits.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const handleAdd = async (formData) => {
     const result = await addStaffMember(formData);
     if (result) {
-      resetForm();
       setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleUpdate = async (formData) => {
+    const result = await updateStaffMember(editingStaff.id, formData);
+    if (result) {
+      setIsEditDialogOpen(false);
+      setEditingStaff(null);
+    }
+  };
+
+  const handleImport = async (importedData) => {
+    try {
+      for (const member of importedData) {
+        await addStaffMember({
+          name: member.name,
+          role: member.role || 'Cashier',
+          username: member.username || member.name?.toLowerCase().replace(/\s+/g, ''),
+          email: member.email || `${member.name?.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          password: member.password || 'password123',
+          permissions: defaultPermissions[member.role || 'Cashier'] || defaultPermissions.Cashier,
+        });
+      }
+      setIsImportDialogOpen(false);
+    } catch (error) {
+      console.error('Import error:', error);
     }
   };
 
@@ -62,109 +224,43 @@ const StaffManagement = () => {
 
   const handleEdit = (member) => {
     setEditingStaff(member);
-    setFormData({
-      name: member.name,
-      role: member.role,
-      pin: '' // Don't show current PIN for security
-    });
     setIsEditDialogOpen(true);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    if (!formData.name) {
-      toast({
-        title: "Error",
-        description: "Please provide a name.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (formData.pin && formData.pin.length < 4) {
-      toast({
-        title: "Error",
-        description: "PIN must be at least 4 digits.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const updateData = {
-      name: formData.name,
-      role: formData.role
-    };
-    
-    // Only include PIN if it was changed
-    if (formData.pin) {
-      updateData.pin = formData.pin;
-    }
-    
-    const result = await updateStaffMember(editingStaff.id, updateData);
-    if (result) {
-      resetForm();
-      setIsEditDialogOpen(false);
-      setEditingStaff(null);
-    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-amber-100">Staff Management</h2>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700 self-start sm:self-center">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Staff
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="glass-effect border-amber-800/50">
-            <DialogHeader>
-              <DialogTitle className="text-amber-100">Add New Staff Member</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <Label className="text-amber-200">Full Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="bg-black/20 border-amber-800/50 text-amber-100"
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-amber-200">Role</Label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
-                  className="w-full h-10 px-3 rounded-md bg-black/20 border border-amber-800/50 text-amber-100"
-                >
-                  <option value="Cashier">Cashier</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <Label className="text-amber-200">PIN (4+ digits) *</Label>
-                <Input
-                  type="password"
-                  value={formData.pin}
-                  onChange={(e) => setFormData({...formData, pin: e.target.value})}
-                  className="bg-black/20 border-amber-800/50 text-amber-100"
-                  required
-                  minLength="4"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
-                  Add Staff Member
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2 self-start sm:self-center">
+          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-amber-800/50 text-amber-100">
+                <Upload className="w-4 h-4 mr-2" />
+                Import Data
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-effect border-amber-800/50 max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-amber-100">Import Staff Data</DialogTitle>
+              </DialogHeader>
+              <DataImporter dataType="staff" onImport={handleImport} />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-amber-600 hover:bg-amber-700 self-start sm:self-center">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Staff
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-effect border-amber-800/50">
+              <DialogHeader>
+                <DialogTitle className="text-amber-100">Add New Staff Member</DialogTitle>
+              </DialogHeader>
+              <StaffForm onSave={handleAdd} closeDialog={() => setIsAddDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Edit Staff Dialog */}
@@ -173,47 +269,11 @@ const StaffManagement = () => {
           <DialogHeader>
             <DialogTitle className="text-amber-100">Edit Staff Member</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4">
-            <div>
-              <Label className="text-amber-200">Full Name *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="bg-black/20 border-amber-800/50 text-amber-100"
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-amber-200">Role</Label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full h-10 px-3 rounded-md bg-black/20 border border-amber-800/50 text-amber-100"
-              >
-                <option value="Cashier">Cashier</option>
-                <option value="Admin">Admin</option>
-              </select>
-            </div>
-            <div>
-              <Label className="text-amber-200">New PIN (leave blank to keep current)</Label>
-              <Input
-                type="password"
-                value={formData.pin}
-                onChange={(e) => setFormData({...formData, pin: e.target.value})}
-                className="bg-black/20 border-amber-800/50 text-amber-100"
-                minLength="4"
-                placeholder="Enter new PIN or leave blank"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
-                Update Staff Member
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
+          <StaffForm 
+            staffMember={editingStaff} 
+            onSave={handleUpdate} 
+            closeDialog={() => setIsEditDialogOpen(false)} 
+          />
         </DialogContent>
       </Dialog>
 
@@ -260,14 +320,20 @@ const StaffManagement = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-amber-200/70 bg-black/20 p-2 rounded-md">
-                    <KeyRound className="w-4 h-4 text-amber-500" />
-                    <span>PIN: ****</span>
+                  <div className="flex items-center gap-2 text-sm text-blue-200/70 bg-blue-950/20 p-2 rounded-md">
+                    <Shield className="w-4 h-4 text-blue-500" />
+                    <span>Permissions: {member.permissions?.length || 0} granted</span>
                   </div>
                   {member.username && (
                     <div className="flex items-center gap-2 text-sm text-green-200/70 bg-green-950/20 p-2 rounded-md">
                       <User className="w-4 h-4 text-green-500" />
                       <span>Login: {member.username}</span>
+                    </div>
+                  )}
+                  {member.email && (
+                    <div className="flex items-center gap-2 text-sm text-purple-200/70 bg-purple-950/20 p-2 rounded-md">
+                      <User className="w-4 h-4 text-purple-500" />
+                      <span>Email: {member.email}</span>
                     </div>
                   )}
                 </div>

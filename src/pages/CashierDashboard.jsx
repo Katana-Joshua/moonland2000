@@ -88,7 +88,7 @@ const CashierDashboard = () => {
         >
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-amber-100">Moon Land Terminal</h1>
-            <p className="text-amber-200/80">Welcome, {user.username}</p>
+            <p className="text-amber-200/80">Welcome, {user.name || user.username}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button

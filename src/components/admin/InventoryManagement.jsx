@@ -2,22 +2,41 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { usePOS } from '@/contexts/POSContext.jsx';
-import { Plus, FolderPlus } from 'lucide-react';
+import { Plus, FolderPlus, Upload } from 'lucide-react';
 import InventoryForm from '@/components/admin/inventory/InventoryForm';
 import CategoryManager from '@/components/admin/inventory/CategoryManager';
 import InventoryList from '@/components/admin/inventory/InventoryList';
+import DataImporter from '@/components/admin/DataImporter';
 import { Input } from '@/components/ui/input';
 
 const InventoryManagement = () => {
   const { addInventoryItem } = usePOS();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleAdd = async (formData) => {
     const result = await addInventoryItem(formData);
     if (result) {
       setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleImport = async (importedData) => {
+    try {
+      for (const item of importedData) {
+        await addInventoryItem({
+          ...item,
+          price: parseFloat(item.price) || 0,
+          costPrice: parseFloat(item.costPrice) || 0,
+          stock: parseInt(item.stock) || 0,
+          lowStockAlert: parseInt(item.lowStockAlert) || 5,
+        });
+      }
+      setIsImportDialogOpen(false);
+    } catch (error) {
+      console.error('Import error:', error);
     }
   };
 
@@ -39,6 +58,20 @@ const InventoryManagement = () => {
                 <DialogTitle className="text-amber-100">Manage Categories</DialogTitle>
               </DialogHeader>
               <CategoryManager />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-amber-800/50 text-amber-100">
+                <Upload className="w-4 h-4 mr-2" />
+                Import Data
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-effect border-amber-800/50 max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-amber-100">Import Inventory Data</DialogTitle>
+              </DialogHeader>
+              <DataImporter dataType="inventory" onImport={handleImport} />
             </DialogContent>
           </Dialog>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

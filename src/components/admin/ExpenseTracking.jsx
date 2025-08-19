@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePOS } from '@/contexts/POSContext';
-import { TrendingDown, Trash2, AlertTriangle } from 'lucide-react';
+import { TrendingDown, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import DataImporter from '@/components/admin/DataImporter';
 
 const ExpenseTracking = () => {
-  const { expenses, deleteExpense } = usePOS();
+  const { expenses, deleteExpense, addExpense } = usePOS();
   const [deletingExpenseId, setDeletingExpenseId] = useState(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
@@ -38,18 +41,42 @@ const ExpenseTracking = () => {
     }
   };
 
+  const handleImport = async (importedData) => {
+    try {
+      for (const expense of importedData) {
+        await addExpense({
+          description: expense.description,
+          amount: parseFloat(expense.amount) || 0,
+        });
+      }
+      setIsImportDialogOpen(false);
+    } catch (error) {
+      console.error('Import error:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <Card className="glass-effect border-red-800/50">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-bold text-red-100">Expense Tracking</CardTitle>
-          <TrendingDown className="h-6 w-6 text-red-400" />
-        </CardHeader>
-        <CardContent>
-            <p className="text-sm text-red-200/80">Total Expenses Incurred</p>
-            <p className="text-3xl font-bold text-red-400">UGX {totalExpenses.toLocaleString()}</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <Card className="glass-effect border-red-800/50 flex-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-bold text-red-100">Expense Tracking</CardTitle>
+            <TrendingDown className="h-6 w-6 text-red-400" />
+          </CardHeader>
+          <CardContent>
+              <p className="text-sm text-red-200/80">Total Expenses Incurred</p>
+              <p className="text-3xl font-bold text-red-400">UGX {totalExpenses.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+        <Button 
+          variant="outline" 
+          className="border-amber-800/50 text-amber-100 self-start sm:self-center"
+          onClick={() => setIsImportDialogOpen(true)}
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Import Data
+        </Button>
+      </div>
 
       <Card className="glass-effect border-amber-800/50">
         <CardHeader>
@@ -106,6 +133,16 @@ const ExpenseTracking = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="glass-effect border-amber-800/50 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-amber-100">Import Expense Data</DialogTitle>
+          </DialogHeader>
+          <DataImporter dataType="expenses" onImport={handleImport} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

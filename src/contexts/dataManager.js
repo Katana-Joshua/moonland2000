@@ -3,6 +3,24 @@ import { toast } from '@/components/ui/use-toast';
 const generateId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 const generateShortReceiptNumber = () => `RCP-${String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 100)).padStart(2, '0')}`;
 
+// --- Permissions System ---
+export const availablePermissions = [
+  { id: 'access_cashier_dashboard', label: 'Access Cashier Terminal', description: 'Can log in and make sales.' },
+  { id: 'access_admin_dashboard', label: 'Access Admin Dashboard', description: 'Can view the admin panel.' },
+  { id: 'manage_inventory', label: 'Manage Inventory', description: 'Can add, edit, and delete items.' },
+  { id: 'manage_staff', label: 'Manage Staff', description: 'Can add, edit, and remove staff.' },
+  { id: 'view_reports', label: 'View Sales Reports', description: 'Can access financial and sales reports.' },
+  { id: 'manage_expenses', label: 'Manage Expenses', description: 'Can add or remove expense records.' },
+  { id: 'change_item_price', label: 'Change Item Price at Sale', description: 'Can override item prices during a sale.' },
+  { id: 'access_settings', label: 'Access Business Settings', description: 'Can change branding, receipts, etc.' },
+  { id: 'delete_transactions', label: 'Delete Transactions', description: 'Can permanently delete sales records.' },
+];
+
+export const defaultPermissions = {
+  Admin: availablePermissions.map(p => p.id),
+  Cashier: ['access_cashier_dashboard', 'change_item_price'],
+};
+
 // --- Cart Management ---
 export const handleAddToCart = (item, cart, setCart) => {
   const existingItem = cart.find(cartItem => cartItem.id === item.id);

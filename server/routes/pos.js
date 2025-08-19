@@ -148,7 +148,7 @@ router.use(requireCashier);
 // ===== INVENTORY ROUTES =====
 
 // Get all inventory items
-router.get('/inventory', async (req, res) => {
+router.get('/inventory', authenticateToken, async (req, res) => {
   try {
     const result = await executeQuery(`
       SELECT 
@@ -464,7 +464,7 @@ router.delete('/inventory/:id', async (req, res) => {
 // ===== SALES ROUTES =====
 
 // Get all sales
-router.get('/sales', async (req, res) => {
+router.get('/sales', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate, status, receiptNumber } = req.query;
     let query = `
@@ -600,10 +600,10 @@ router.post('/sales', [
 
     console.log('🆔 Generated IDs:', { saleId, receiptNumber });
 
-    // Use req.user if available, otherwise fallback to userId/username from body
-    let cashierName = req.user?.username;
-    if (!cashierName && req.body.username) {
-      cashierName = req.body.username;
+    // Use req.user if available, otherwise fallback to cashierName from body
+    let cashierName = req.user?.name || req.user?.username;
+    if (!cashierName && req.body.cashierName) {
+      cashierName = req.body.cashierName;
     }
 
     // Use transaction for sale processing
@@ -868,9 +868,9 @@ router.post('/shifts', [
       if (!staffResult.success || staffResult.data.length === 0) {
         // Create a staff record for this user
         const createStaffResult = await executeQuery(`
-          INSERT INTO staff (id, name, role, pin) 
-          VALUES (?, ?, 'Cashier', '0000')
-        `, [staffId, `User ${staffId}`]);
+          INSERT INTO staff (id, name, role, username, email) 
+          VALUES (?, ?, 'Cashier', ?, ?)
+        `, [staffId, `User ${staffId}`, `user${staffId}`, `user${staffId}@example.com`]);
         
         if (!createStaffResult.success) {
           return res.status(500).json({
@@ -1078,7 +1078,7 @@ router.get('/shifts/active', async (req, res) => {
 // ===== EXPENSES ROUTES =====
 
 // Get expenses
-router.get('/expenses', async (req, res) => {
+router.get('/expenses', authenticateToken, async (req, res) => {
   try {
     const result = await executeQuery(`
       SELECT * FROM expenses 
@@ -1106,7 +1106,7 @@ router.get('/expenses', async (req, res) => {
 });
 
 // Add expense
-router.post('/expenses', [
+router.post('/expenses', authenticateToken, [
   body('description').notEmpty().withMessage('Description is required'),
   body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number')
 ], async (req, res) => {
@@ -1129,7 +1129,7 @@ router.post('/expenses', [
     const result = await executeQuery(`
       INSERT INTO expenses (id, description, amount, category, cashier, shift_id, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [expenseId, description, amount, category || null, req.user.username, shiftId || null, expenseTimestamp]);
+    `, [expenseId, description, amount, category || null, req.user.name || req.user.username, shiftId || null, expenseTimestamp]);
 
     if (!result.success) {
       return res.status(500).json({
@@ -1146,7 +1146,7 @@ router.post('/expenses', [
         description, 
         amount, 
         category: category || null,
-        cashier: req.user.username,
+        cashier: req.user.name || req.user.username,
         shiftId: shiftId || null,
         timestamp: expenseTimestamp
       }
@@ -1161,7 +1161,7 @@ router.post('/expenses', [
 });
 
 // Delete expense
-router.delete('/expenses/:id', async (req, res) => {
+router.delete('/expenses/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1199,7 +1199,7 @@ router.delete('/expenses/:id', async (req, res) => {
 // ===== CATEGORIES ROUTES =====
 
 // Get categories
-router.get('/categories', async (req, res) => {
+router.get('/categories', authenticateToken, async (req, res) => {
   try {
     const result = await executeQuery(`
       SELECT id, name, 
@@ -1464,7 +1464,7 @@ router.delete('/categories/:id', async (req, res) => {
 // ===== STAFF ROUTES =====
 
 // Get staff
-router.get('/staff', async (req, res) => {
+router.get('/staff', authenticateToken, async (req, res) => {
   try {
     const result = await executeQuery(`
       SELECT s.*, u.username, u.id as user_id 
@@ -1496,7 +1496,9 @@ router.get('/staff', async (req, res) => {
 // Add staff member
 router.post('/staff', [
   body('name').notEmpty().withMessage('Name is required'),
-  body('pin').isLength({ min: 4 }).withMessage('PIN must be at least 4 characters')
+  body('username').notEmpty().withMessage('Username is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('email').isEmail().withMessage('Valid email is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -1508,27 +1510,21 @@ router.post('/staff', [
       });
     }
 
-    const { name, role, pin } = req.body;
+    const { name, role, username, password, email } = req.body;
     const staffId = `staff-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Generate username from name (lowercase, no spaces, unique)
-    let username = name.toLowerCase().replace(/\s+/g, '');
-    let counter = 1;
-    let finalUsername = username;
-
-    // Check if username exists and make it unique
-    while (true) {
-      const existingUser = await executeQuery('SELECT id FROM users WHERE username = ?', [finalUsername]);
-      if (existingUser.success && existingUser.data.length === 0) {
-        break; // Username is unique
-      }
-      finalUsername = `${username}${counter}`;
-      counter++;
+    // Check if username already exists
+    const existingUser = await executeQuery('SELECT id FROM users WHERE username = ?', [username]);
+    if (existingUser.success && existingUser.data.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username already exists'
+      });
     }
 
-    // Hash the PIN to use as password
+    // Hash the password
     const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(pin, saltRounds);
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Start transaction to create both staff and user
     const connection = await executeQuery('START TRANSACTION');
@@ -1536,8 +1532,8 @@ router.post('/staff', [
     try {
       // 1. Create staff record
       const staffResult = await executeQuery(`
-        INSERT INTO staff (id, name, role, pin) VALUES (?, ?, ?, ?)
-      `, [staffId, name, role || 'Cashier', pin]);
+        INSERT INTO staff (id, name, role, username, email) VALUES (?, ?, ?, ?, ?)
+      `, [staffId, name, role || 'Cashier', username, email]);
 
       if (!staffResult.success) {
         throw new Error('Failed to create staff record');
@@ -1546,7 +1542,7 @@ router.post('/staff', [
       // 2. Create user account
       const userResult = await executeQuery(`
         INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)
-      `, [finalUsername, passwordHash, role === 'Admin' ? 'admin' : 'cashier']);
+      `, [username, passwordHash, role === 'Admin' ? 'admin' : 'cashier']);
 
       if (!userResult.success) {
         throw new Error('Failed to create user account');
@@ -1564,7 +1560,7 @@ router.post('/staff', [
       // Commit transaction
       await executeQuery('COMMIT');
 
-      console.log(`✅ Created staff member: ${name} (${role}) with username: ${finalUsername}`);
+      console.log(`✅ Created staff member: ${name} (${role}) with username: ${username}`);
 
       res.status(201).json({
         success: true,
@@ -1573,7 +1569,8 @@ router.post('/staff', [
           id: staffId, 
           name, 
           role: role || 'Cashier',
-          username: finalUsername,
+          username: username,
+          email: email,
           userId: userResult.data.insertId
         }
       });
@@ -1608,7 +1605,7 @@ router.put('/staff/:id', [
     }
 
     const { id } = req.params;
-    const { name, role, pin } = req.body;
+    const { name, role, username, email, password } = req.body;
 
     // Get current staff record to find linked user
     const currentStaff = await executeQuery('SELECT user_id FROM staff WHERE id = ?', [id]);
@@ -1629,9 +1626,14 @@ router.put('/staff/:id', [
       let staffQuery = 'UPDATE staff SET name = ?, role = ?';
       let staffParams = [name, role || 'Cashier'];
 
-      if (pin) {
-        staffQuery += ', pin = ?';
-        staffParams.push(pin);
+      if (username) {
+        staffQuery += ', username = ?';
+        staffParams.push(username);
+      }
+
+      if (email) {
+        staffQuery += ', email = ?';
+        staffParams.push(email);
       }
 
       staffQuery += ' WHERE id = ?';
@@ -1654,10 +1656,10 @@ router.put('/staff/:id', [
           throw new Error('Failed to update user record');
         }
 
-        // 3. Update password if PIN was changed
-        if (pin) {
+        // 3. Update password if provided
+        if (password) {
           const saltRounds = 10;
-          const passwordHash = await bcrypt.hash(pin, saltRounds);
+          const passwordHash = await bcrypt.hash(password, saltRounds);
 
           const passwordResult = await executeQuery(`
             UPDATE users SET password_hash = ? WHERE id = ?
