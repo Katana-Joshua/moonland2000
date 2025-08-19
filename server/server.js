@@ -1,6 +1,5 @@
 // Test change for deployment - update by user request
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
@@ -22,7 +21,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware - More permissive for CORS
+// Security middleware - Disabled CORS restrictions
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
@@ -41,16 +40,8 @@ app.use(helmet({
   }
 }));
 
-// CORS configuration - Force allow all origins with more permissive settings
-app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true, // Allow credentials
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-  allowedHeaders: ['*'], // Allow all headers
-  exposedHeaders: ['*'], // Expose all headers
-  optionsSuccessStatus: 200,
-  preflightContinue: false
-}));
+// CORS COMPLETELY DISABLED - No restrictions
+// app.use(cors()); // Commented out - no CORS middleware
 
 // Rate limiting
 const limiter = rateLimit({
@@ -66,69 +57,20 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Handle OPTIONS preflight requests explicitly - More permissive
-app.options('*', (req, res) => {
-  console.log('🔍 OPTIONS preflight request received from:', req.headers.origin);
-  
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Max-Age', '86400');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-  res.status(200).end();
-});
+// CORS COMPLETELY DISABLED - No preflight handling
+// app.options('*', (req, res) => { ... }); // Commented out
 
-// Global CORS headers for all routes - More permissive
-app.use((req, res, next) => {
-  // Log CORS requests for debugging
-  if (req.method === 'OPTIONS' || req.headers.origin) {
-    console.log('🌍 CORS Request:', req.method, req.path, 'from:', req.headers.origin);
-  }
-  
-  // Set permissive CORS headers
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Max-Age', '86400');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
+// CORS COMPLETELY DISABLED - No global headers
+// app.use((req, res, next) => { ... }); // Commented out
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files (uploaded images) with CORS headers and optimization
-app.use('/uploads', (req, res, next) => {
-  // Set CORS headers for static files
-  res.header('Access-Control-Allow-Origin', '*'); 
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-}, express.static('uploads', {
+// Serve static files (uploaded images) - CORS disabled
+app.use('/uploads', express.static('uploads', {
   setHeaders: (res, filePath) => {
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.set('Access-Control-Allow-Origin', '*');
+    // CORS headers removed - no restrictions
     res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
     
     // Don't compress images - they're already compressed
@@ -196,14 +138,8 @@ app.use('/api/accounting', accountingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/branding', brandingRoutes);
 
-// Additional CORS handling for auth routes specifically
-app.use('/api/auth/*', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', '*');
-  next();
-});
+// CORS COMPLETELY DISABLED - No specific route handling
+// app.use('/api/auth/*', (req, res, next) => { ... }); // Commented out
 
 // 404 handler
 app.use('*', (req, res) => {
