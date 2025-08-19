@@ -66,13 +66,33 @@ app.use((req, res, next) => {
   res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
   res.header('Access-Control-Max-Age', '86400');
   
-  // Handle preflight requests
+  // Handle preflight requests globally
   if (req.method === 'OPTIONS') {
+    console.log('🌐 Global OPTIONS preflight request:', {
+      url: req.url,
+      origin: req.headers.origin,
+      method: req.method
+    });
     res.status(200).end();
     return;
   }
   
   next();
+});
+
+// Global OPTIONS handler for all routes
+app.options('*', (req, res) => {
+  console.log('🌐 Global OPTIONS handler:', {
+    url: req.url,
+    origin: req.headers.origin,
+    method: req.method
+  });
+  
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
 });
 
 // Rate limiting
@@ -214,6 +234,36 @@ app.options('/debug-cors', (req, res) => {
   res.status(200).end();
 });
 
+// Login CORS test endpoint
+app.post('/login-test', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  res.json({
+    success: true,
+    message: 'Login CORS test successful',
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    origin: req.headers.origin,
+    corsHeaders: {
+      'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Methods': res.get('Access-Control-Allow-Methods'),
+      'Access-Control-Allow-Headers': res.get('Access-Control-Allow-Headers')
+    }
+  });
+});
+
+// Preflight for login test
+app.options('/login-test', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pos', posRoutes);
@@ -266,6 +316,12 @@ const startServer = async () => {
       console.log(`   - /health - Health check with CORS`);
       console.log(`   - /cors-test - CORS test endpoint`);
       console.log(`   - /debug-cors - Detailed CORS debugging`);
+      console.log(`   - /login-test - Login CORS test endpoint`);
+      console.log(`🔍 Environment Variables Check:`);
+      console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'NOT SET'}`);
+      console.log(`   - CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'NOT SET (using default: *)'}`);
+      console.log(`   - CORS_CREDENTIALS: ${process.env.CORS_CREDENTIALS || 'NOT SET (using default: false)'}`);
+      console.log(`   - PORT: ${process.env.PORT || 'NOT SET (using default: 5000)'}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
