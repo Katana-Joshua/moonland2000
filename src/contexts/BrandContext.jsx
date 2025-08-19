@@ -43,15 +43,22 @@ export const BrandProvider = ({ children }) => {
         console.log('🌐 Fetching branding data for public display...');
         
         const businessSettings = await brandingAPI.getBusinessSettings();
+        console.log('📊 Business settings received:', businessSettings);
+        
         const brandingAssets = await brandingAPI.getBrandingAssets();
+        console.log('📁 Branding assets received:', brandingAssets);
         
         // Find logo asset
         const logoAsset = brandingAssets.find(asset => asset.asset_type === 'logo');
+        console.log('🖼️ Logo asset found:', logoAsset);
         
-        setBranding({
+        const newBranding = {
           ...businessSettings,
           logo: logoAsset ? brandingAPI.getBrandingAssetUrl('logo') : null
-        });
+        };
+        
+        console.log('🎨 Final branding object:', newBranding);
+        setBranding(newBranding);
         
         setIsInitialized(true);
         console.log('✅ Branding data loaded successfully for public display');
@@ -122,9 +129,15 @@ export const BrandProvider = ({ children }) => {
     }
   };
 
-  const LogoComponent = branding.logo 
-    ? ({ className }) => <img src={branding.logo} alt={`${branding.businessName} logo`} className={className} />
-    : ({ className }) => <Moon className={className} />;
+  const LogoComponent = ({ className }) => {
+    console.log('🖼️ LogoComponent rendered with:', { logo: branding.logo, businessName: branding.businessName });
+    
+    if (branding.logo) {
+      return <img src={branding.logo} alt={`${branding.businessName} logo`} className={className} />;
+    } else {
+      return <Moon className={className} />;
+    }
+  };
 
   const value = {
     branding,
