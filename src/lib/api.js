@@ -1,8 +1,8 @@
-// API Base URL - change this for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://web-production-83ab9.up.railway.app/api';
+// API Base URL - Updated to use the correct production backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://moonland2000server-production.up.railway.app/api';
 
-// Backend URL for image serving - change this for production
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://web-production-83ab9.up.railway.app';
+// Backend URL for image serving - Updated to use the correct production backend
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://moonland2000server-production.up.railway.app';
 
 // Helper function to get auth token
 const getAuthToken = () => {
