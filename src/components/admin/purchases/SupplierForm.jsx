@@ -29,7 +29,7 @@ const SupplierForm = ({ onSubmit, onCancel }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/suppliers`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/suppliers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

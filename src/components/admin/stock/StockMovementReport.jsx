@@ -24,7 +24,7 @@ const StockMovementReport = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/inventory`);
       if (response.ok) {
         const data = await response.json();
         setInventory(data);
@@ -48,7 +48,7 @@ const StockMovementReport = () => {
         ...(endDate && { end_date: endDate.toISOString().split('T')[0] })
       });
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/stock-movements?${params}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/stock-movements?${params}`);
       if (response.ok) {
         const data = await response.json();
         setStockMovements(data);

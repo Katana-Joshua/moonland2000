@@ -16,7 +16,7 @@ const SupplierList = () => {
 
   const loadSuppliers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/suppliers`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/suppliers`);
       if (response.ok) {
         const data = await response.json();
         setSuppliers(data);

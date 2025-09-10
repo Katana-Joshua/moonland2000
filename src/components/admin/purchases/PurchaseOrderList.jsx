@@ -16,7 +16,7 @@ const PurchaseOrderList = () => {
 
   const loadPurchaseOrders = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchase-orders`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/purchase-orders`);
       if (response.ok) {
         const data = await response.json();
         setPurchaseOrders(data);

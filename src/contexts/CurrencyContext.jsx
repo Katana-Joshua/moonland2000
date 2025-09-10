@@ -38,7 +38,7 @@ export const CurrencyProvider = ({ children }) => {
   useEffect(() => {
     const loadCurrency = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/currency/current`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/currency/current`);
         if (response.ok) {
           const data = await response.json();
           if (data.currency_code) {
@@ -70,7 +70,7 @@ export const CurrencyProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/currency/update`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/currency/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

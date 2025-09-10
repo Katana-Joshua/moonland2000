@@ -241,6 +241,23 @@ app.options('/login-test', (req, res) => {
   res.status(200).end();
 });
 
+// Fallback image endpoint for when database is not available
+app.get('/api/pos/images/:id', (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  
+  // Return a placeholder image response
+  res.status(404).json({
+    success: false,
+    message: 'Image not available - database connection required',
+    fallback: true
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pos', posRoutes);

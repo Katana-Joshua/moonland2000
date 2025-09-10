@@ -26,7 +26,7 @@ const PurchaseOrderForm = ({ onSubmit, onCancel }) => {
 
   const loadSuppliers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/suppliers`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/suppliers`);
       if (response.ok) {
         const data = await response.json();
         setSuppliers(data);
@@ -87,7 +87,7 @@ const PurchaseOrderForm = ({ onSubmit, onCancel }) => {
         }))
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchase-orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/purchase-orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

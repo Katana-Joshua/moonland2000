@@ -7,7 +7,7 @@ import { usePOS } from '@/contexts/POSContext';
 import { Plus, Search, Image as ImageIcon, Barcode, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { buildImageUrl } from '@/lib/api';
+import { buildImageUrl, handleImageError } from '@/lib/api';
 
 const MenuGrid = () => {
   const { inventory, addToCart, categories } = usePOS();
@@ -172,9 +172,7 @@ const MenuGrid = () => {
                       alt={item.name}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
+                      onError={(e) => handleImageError(e, item.name.charAt(0))}
                       onLoad={() => console.log('Cashier image loaded successfully for:', item.name)}
                     />
                   ) : (

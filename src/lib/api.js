@@ -43,6 +43,21 @@ const buildImageUrl = (imagePath) => {
   return `${BACKEND_URL}${imagePath}`;
 };
 
+// Helper function to handle image loading errors
+const handleImageError = (e, fallbackText = 'No Image') => {
+  console.warn('Image failed to load:', e.target.src);
+  e.target.style.display = 'none';
+  
+  // Create a fallback element if it doesn't exist
+  const fallback = e.target.nextElementSibling;
+  if (!fallback || !fallback.classList.contains('image-fallback')) {
+    const fallbackDiv = document.createElement('div');
+    fallbackDiv.className = 'image-fallback w-full h-full bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center rounded-md';
+    fallbackDiv.innerHTML = `<span class="text-amber-300 text-lg font-bold">${fallbackText}</span>`;
+    e.target.parentNode.insertBefore(fallbackDiv, e.target.nextSibling);
+  }
+};
+
 // Generic API request function
 const apiRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
@@ -763,4 +778,4 @@ export default {
 };
 
 // Export utility functions
-export { buildImageUrl, BACKEND_URL }; 
+export { buildImageUrl, handleImageError, BACKEND_URL }; 

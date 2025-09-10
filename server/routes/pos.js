@@ -49,12 +49,29 @@ const upload = multer({
 router.get('/images/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // Get image data from inventory
+    
+    // Set CORS headers first
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    res.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+    
+    // Try to get image data from database
     const result = await executeQuery(`
       SELECT image_data FROM inventory WHERE id = ?
     `, [id]);
 
-    if (!result.success || result.data.length === 0) {
+    if (!result.success) {
+      console.error('Database error when fetching image:', result.error);
+      return res.status(500).json({
+        success: false,
+        message: 'Database connection error'
+      });
+    }
+
+    if (result.data.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Image not found'
@@ -83,12 +100,6 @@ router.get('/images/:id', async (req, res) => {
 
     res.set('Content-Type', contentType);
     res.set('Cache-Control', 'public, max-age=31536000');
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-    res.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
     res.send(imageData);
   } catch (error) {
     console.error('Serve image error:', error);

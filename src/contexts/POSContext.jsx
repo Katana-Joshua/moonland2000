@@ -678,7 +678,7 @@ export const POSProvider = ({ children }) => {
   // --- Purchase Order Functions ---
   const addPurchaseOrder = async (orderData) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchase-orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/purchase-orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -703,7 +703,7 @@ export const POSProvider = ({ children }) => {
   // --- Supplier Functions ---
   const addSupplier = async (supplierData) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/suppliers`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/suppliers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -728,7 +728,7 @@ export const POSProvider = ({ children }) => {
   // --- Sales Return Functions ---
   const processReturn = async (originalSaleId) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/pos/process-return`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/pos/process-return`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

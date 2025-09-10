@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Trash2, Package, TrendingUp, Barcode } from 'lucide-react';
-import { buildImageUrl } from '@/lib/api';
+import { buildImageUrl, handleImageError } from '@/lib/api';
 
 const InventoryItemCard = ({ item, onEdit, onDelete }) => {
   const profitMargin = item.price && item.costPrice ? ((item.price - item.costPrice) / item.price) * 100 : 0;
@@ -52,10 +52,7 @@ const InventoryItemCard = ({ item, onEdit, onDelete }) => {
             alt={item.name}
             loading="lazy"
             className="w-full h-32 object-cover rounded-md mb-3"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              // Optionally, you can set a state to show a placeholder
-            }}
+            onError={(e) => handleImageError(e, item.name.charAt(0))}
             onLoad={() => console.log('Image loaded successfully for:', item.name)}
           />
         ) : (
