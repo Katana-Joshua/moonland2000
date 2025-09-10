@@ -26,7 +26,7 @@ const ReceiptCustomization = () => {
 
   const loadTemplate = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/receipt-templates/default`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/receipt-templates/default`);
       if (response.ok) {
         const data = await response.json();
         setTemplate(data);
@@ -39,7 +39,7 @@ const ReceiptCustomization = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/receipt-templates/update`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/receipt-templates/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

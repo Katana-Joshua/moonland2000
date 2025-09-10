@@ -4,10 +4,15 @@ const router = express.Router();
 
 // Get current currency settings
 router.get('/current', async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  
   try {
     const result = await executeQuery('SELECT * FROM currency_settings WHERE is_active = true LIMIT 1');
     
-    if (result.length === 0) {
+    if (!result.success || result.data.length === 0) {
       // Return default currency if none is set
       return res.json({
         currency_code: 'UGX',
@@ -16,7 +21,7 @@ router.get('/current', async (req, res) => {
       });
     }
 
-    res.json(result[0]);
+    res.json(result.data[0]);
   } catch (error) {
     console.error('Error fetching currency settings:', error);
     res.status(500).json({ error: 'Failed to fetch currency settings' });
@@ -25,6 +30,11 @@ router.get('/current', async (req, res) => {
 
 // Update currency settings
 router.put('/update', async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'PUT, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  
   try {
     const { currency_code, currency_symbol, currency_name } = req.body;
 
@@ -41,7 +51,7 @@ router.put('/update', async (req, res) => {
       [currency_code]
     );
 
-    if (existing.length > 0) {
+    if (existing.success && existing.data.length > 0) {
       // Update existing currency
       await executeQuery(
         'UPDATE currency_settings SET currency_symbol = ?, currency_name = ?, is_active = true WHERE currency_code = ?',
@@ -65,6 +75,21 @@ router.put('/update', async (req, res) => {
     console.error('Error updating currency settings:', error);
     res.status(500).json({ error: 'Failed to update currency settings' });
   }
+});
+
+// OPTIONS handlers for CORS
+router.options('/current', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.status(200).end();
+});
+
+router.options('/update', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'PUT, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.status(200).end();
 });
 
 export default router;
