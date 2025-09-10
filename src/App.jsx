@@ -13,7 +13,15 @@ import { BrandProvider } from '@/contexts/BrandContext.jsx';
 import { BusinessProvider, useBusiness } from '@/contexts/BusinessContext.jsx';
 import CustomerDebtHistory from '@/pages/CustomerDebtHistory.jsx';
 import SetupWizard from '@/pages/SetupWizard.jsx';
+import AdminPOS from '@/pages/AdminPOS.jsx';
+import SettingsPage from '@/pages/SettingsPage.jsx';
+import PurchasesPage from '@/pages/PurchasesPage.jsx';
+import ReprintTerminal from '@/pages/ReprintTerminal.jsx';
+import StockControlPage from '@/pages/StockControlPage.jsx';
+import CashierTransactions from '@/pages/CashierTransactions.jsx';
+import ClientReviewsPage from '@/pages/ClientReviewsPage.jsx';
 import ProtectedRoute from '@/components/auth/ProtectedRoute.jsx';
+import { CurrencyProvider } from '@/contexts/CurrencyContext.jsx';
 
 // Component to guard routes based on business type
 const BusinessTypeGuard = ({ children }) => {
@@ -47,7 +55,8 @@ function App() {
         <Router>
           <BrandProvider>
             <BusinessProvider>
-              <BusinessTypeGuard>
+              <CurrencyProvider>
+                <BusinessTypeGuard>
                 <Helmet>
                   <title>Moon Land - Point of Sale System</title>
                   <meta name="description" content="Modern point of sale system for bars and restaurants, featuring admin and cashier dashboards, inventory management, and sales reporting." />
@@ -84,10 +93,67 @@ function App() {
                         </ProtectedRoute>
                       } 
                     />
+                    <Route 
+                      path="/admin/pos" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminPOS />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/settings" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <SettingsPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/purchases" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <PurchasesPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/reprint-terminal" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <ReprintTerminal />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/stock-control" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <StockControlPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/cashier-transactions" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <CashierTransactions />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/client-reviews" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <ClientReviewsPage />
+                        </ProtectedRoute>
+                      } 
+                    />
                   </Routes>
                   <Toaster />
                 </div>
               </BusinessTypeGuard>
+              </CurrencyProvider>
             </BusinessProvider>
           </BrandProvider>
         </Router>

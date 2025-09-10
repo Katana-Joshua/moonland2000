@@ -4,15 +4,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig = {
-  host: process.env.DB_HOST || '',
-  user: process.env.DB_USER || '',
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || '',
+  database: process.env.DB_NAME || 'moonland_pos',
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  reconnect: true
+  acquireTimeout: 60000,
+  timeout: 60000,
+  connectTimeout: 30000,
+  reconnect: false,
+  ssl: false
 };
 
 // Create connection pool
@@ -21,12 +25,31 @@ const pool = mysql.createPool(dbConfig);
 // Test database connection
 export const testConnection = async () => {
   try {
+    console.log('🔌 Attempting database connection with config:', {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      port: dbConfig.port,
+      password: dbConfig.password ? '***' : 'empty'
+    });
+    
     const connection = await pool.getConnection();
     console.log('✅ Database connected successfully');
     connection.release();
     return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
+    console.error('🔧 Database config:', {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      port: dbConfig.port
+    });
+    console.error('💡 Make sure:');
+    console.error('   1. MySQL server is running');
+    console.error('   2. Database "moonland_pos" exists');
+    console.error('   3. User has proper permissions');
+    console.error('   4. Check your .env file or environment variables');
     return false;
   }
 };

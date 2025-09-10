@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePOS } from '@/contexts/POSContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { toast } from '@/components/ui/use-toast';
 
 const ManualSaleEntry = () => {
     const { inventory, processSale } = usePOS();
+    const { formatCurrency } = useCurrency();
     const [cart, setCart] = useState([]);
     const [date, setDate] = useState(new Date());
     const [selectedItem, setSelectedItem] = useState('');
@@ -61,6 +63,10 @@ const ManualSaleEntry = () => {
             setCart([]);
             setCustomerName('');
             setPaymentMethod('cash');
+            toast({
+                title: 'Sale Recorded',
+                description: 'Manual sale entry has been recorded successfully.',
+            });
         }
     };
 
@@ -83,7 +89,7 @@ const ManualSaleEntry = () => {
                         <SelectContent>
                             {inventory.map(item => (
                                 <SelectItem key={item.id} value={item.id}>
-                                    {item.name} (Stock: {item.stock}) - UGX {item.price.toLocaleString()}
+                                    {item.name} (Stock: {item.stock}) - {formatCurrency(item.price)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -101,10 +107,10 @@ const ManualSaleEntry = () => {
                             <div key={item.id} className="flex justify-between items-center p-2 bg-black/20 rounded-lg">
                                 <div>
                                     <p>{item.name}</p>
-                                    <p className="text-sm text-amber-200/70">{item.quantity} x UGX {item.price.toLocaleString()}</p>
+                                    <p className="text-sm text-amber-200/70">{item.quantity} x {formatCurrency(item.price)}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <p className="font-semibold">UGX {(item.quantity * item.price).toLocaleString()}</p>
+                                    <p className="font-semibold">{formatCurrency(item.quantity * item.price)}</p>
                                     <Button size="icon" variant="destructive" onClick={() => removeFromCart(item.id)}>
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -118,7 +124,7 @@ const ManualSaleEntry = () => {
                     <div className="space-y-4 pt-4 border-t border-amber-800/50">
                         <div className="flex justify-between items-center font-bold text-xl">
                             <span className="text-amber-100">Total</span>
-                            <span className="text-amber-300">UGX {cartTotal.toLocaleString()}</span>
+                            <span className="text-amber-300">{formatCurrency(cartTotal)}</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -145,6 +151,7 @@ const ManualSaleEntry = () => {
 
 const ManualExpenseEntry = () => {
     const { addExpense } = usePOS();
+    const { currency } = useCurrency();
     const [date, setDate] = useState(new Date());
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
@@ -158,6 +165,10 @@ const ManualExpenseEntry = () => {
         addExpense({ description, amount: parseFloat(amount), date });
         setDescription('');
         setAmount('');
+        toast({
+            title: 'Expense Recorded',
+            description: 'Manual expense entry has been recorded successfully.',
+        });
     };
 
     return (
@@ -176,7 +187,7 @@ const ManualExpenseEntry = () => {
                         <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g., Office supplies" className="bg-black/20 border-amber-800/50 text-amber-100" />
                     </div>
                     <div>
-                        <Label htmlFor="amount" className="text-amber-200">Amount (UGX)</Label>
+                        <Label htmlFor="amount" className="text-amber-200">Amount ({currency.code})</Label>
                         <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="bg-black/20 border-amber-800/50 text-amber-100" />
                     </div>
                     <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Record Expense</Button>
@@ -186,7 +197,6 @@ const ManualExpenseEntry = () => {
     );
 };
 
-
 const AdminTerminal = () => {
     return (
         <div>
@@ -195,7 +205,7 @@ const AdminTerminal = () => {
                  <h1 className="text-3xl font-bold text-amber-100">Manual Entry Terminal</h1>
             </div>
             <p className="mb-8 text-amber-200/80 max-w-2xl">
-                This terminal allows you to manually enter transactions. Use this for correcting records, entering missed sales, or recording expenses that happened in the past.
+                This terminal allows you to manually enter transactions with backdating capabilities. Use this for correcting records, entering missed sales, or recording expenses that happened in the past.
             </p>
             <Tabs defaultValue="sales" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-black/20 border border-amber-800/50">

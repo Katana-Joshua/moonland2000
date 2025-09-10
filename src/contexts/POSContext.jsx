@@ -675,6 +675,89 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  // --- Purchase Order Functions ---
+  const addPurchaseOrder = async (orderData) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchase-orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({ title: 'Success', description: 'Purchase order created successfully.' });
+        return data;
+      } else {
+        throw new Error('Failed to create purchase order');
+      }
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+      toast({ title: 'Error', description: 'Failed to create purchase order.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  // --- Supplier Functions ---
+  const addSupplier = async (supplierData) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/suppliers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplierData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({ title: 'Success', description: 'Supplier added successfully.' });
+        return data;
+      } else {
+        throw new Error('Failed to add supplier');
+      }
+    } catch (error) {
+      console.error('Error adding supplier:', error);
+      toast({ title: 'Error', description: 'Failed to add supplier.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  // --- Sales Return Functions ---
+  const processReturn = async (originalSaleId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/pos/process-return`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ originalSaleId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update local state
+        setSales(prevSales => [...prevSales, data.returnSale]);
+        
+        // Update inventory for returned items
+        const updatedInventory = await posAPI.getInventory();
+        setInventory(updatedInventory);
+        
+        toast({ title: 'Return Processed', description: `Return receipt #${data.returnSale.receiptNumber} created successfully.` });
+        return data.returnSale;
+      } else {
+        throw new Error('Failed to process return');
+      }
+    } catch (error) {
+      console.error('Error processing return:', error);
+      toast({ title: 'Error', description: 'Failed to process return.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
   const value = {
     inventory,
     sales,
@@ -712,6 +795,12 @@ export const POSProvider = ({ children }) => {
     updateCategory,
     updateReceiptSettings,
     refreshInventory,
+    // Purchase Order functions
+    addPurchaseOrder,
+    // Supplier functions
+    addSupplier,
+    // Sales Return functions
+    processReturn,
   };
 
   return (

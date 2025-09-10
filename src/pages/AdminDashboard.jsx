@@ -16,7 +16,14 @@ import {
   BarChart3,
   Menu,
   X,
-  Replace
+  Replace,
+  PenSquare,
+  ShoppingBasket,
+  Printer,
+  ClipboardCheck,
+  MessageSquare,
+  UserSearch,
+  Settings2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePOS } from '@/contexts/POSContext';
@@ -118,18 +125,21 @@ const AdminDashboard = () => {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'reports', label: 'Sales Reports', icon: FileText },
+    { id: 'pos', label: 'POS Terminal', icon: Menu },
+    { id: 'terminal', label: 'Manual Entry', icon: PenSquare },
     { id: 'inventory', label: businessType?.features?.inventoryLabel || 'Inventory', icon: Box },
-    { id: 'accounting', label: 'Accounting', icon: BarChart3 },
+    { id: 'stock-control', label: 'Stock Control', icon: ClipboardCheck },
+    { id: 'purchases', label: 'Purchases', icon: ShoppingBasket },
     { id: 'staff', label: 'Staff', icon: Users },
+    { id: 'cashier-transactions', label: 'Cashier Reports', icon: UserSearch },
+    { id: 'reprint-terminal', label: 'Reprint Receipts', icon: Printer },
     { id: 'transactions', label: 'Transactions', icon: History },
-    { id: 'credit', label: 'Customer Debts', icon: BookUser },
+    { id: 'reports', label: 'Sales Reports', icon: FileText },
+    { id: 'credit', label: 'Credit Sales', icon: BookUser },
     { id: 'expenses', label: 'Expenses', icon: DollarSign },
-    { id: 'shifts', label: 'Shift Log', icon: History },
-    { id: 'low-stock', label: 'Low Stock', icon: Box },
-    { id: 'settings', label: 'Receipt Settings', icon: Settings },
-    { id: 'terminal', label: 'Manual Entry', icon: Menu },
-    { id: 'branding', label: 'Branding', icon: Settings },
+    { id: 'accounting', label: 'Accounting', icon: BarChart3 },
+    { id: 'client-reviews', label: 'Client Reviews', icon: MessageSquare },
+    { id: 'settings', label: 'Settings', icon: Settings2 },
   ];
 
   const handleTabClick = (tabId) => {
@@ -141,10 +151,27 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'pos':
+        navigate('/admin/pos');
+        return null;
+      case 'terminal':
+        return <AdminTerminal />;
       case 'inventory':
         return <InventoryManagement />;
+      case 'stock-control':
+        navigate('/admin/stock-control');
+        return null;
+      case 'purchases':
+        navigate('/admin/purchases');
+        return null;
       case 'staff':
         return <StaffManagement />;
+      case 'cashier-transactions':
+        navigate('/admin/cashier-transactions');
+        return null;
+      case 'reprint-terminal':
+        navigate('/admin/reprint-terminal');
+        return null;
       case 'transactions':
         return <TransactionHistory />;
       case 'reports':
@@ -153,18 +180,14 @@ const AdminDashboard = () => {
         return <CreditSalesManagement />;
       case 'expenses':
         return <ExpenseTracking />;
-      case 'shifts':
-        return <ShiftLog />;
       case 'accounting':
         return <AccountingDashboard />;
-      case 'low-stock':
-        return <LowStockAlerts />;
+      case 'client-reviews':
+        navigate('/admin/client-reviews');
+        return null;
       case 'settings':
-        return <ReceiptCustomization />;
-      case 'terminal':
-        return <AdminTerminal />;
-      case 'branding':
-        return <BrandingSettings />;
+        navigate('/admin/settings');
+        return null;
       case 'dashboard':
       default:
         return <DashboardOverview setActiveTab={handleTabClick} />;

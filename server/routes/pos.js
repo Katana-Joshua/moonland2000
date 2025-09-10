@@ -1931,4 +1931,99 @@ router.put('/receipt-settings', authenticateToken, upload.single('logo'), async 
   }
 });
 
+// Process sales return
+router.post('/process-return', authenticateToken, async (req, res) => {
+  try {
+    const { originalSaleId } = req.body;
+
+    if (!originalSaleId) {
+      return res.status(400).json({ error: 'Original sale ID is required' });
+    }
+
+    // Get the original sale
+    const originalSale = await executeQuery(
+      'SELECT * FROM sales WHERE id = ? AND type != "return"',
+      [originalSaleId]
+    );
+
+    if (originalSale.length === 0) {
+      return res.status(404).json({ error: 'Original sale not found' });
+    }
+
+    const sale = originalSale[0];
+
+    // Check if already returned
+    const existingReturn = await executeQuery(
+      'SELECT * FROM sales WHERE original_sale_id = ?',
+      [originalSaleId]
+    );
+
+    if (existingReturn.length > 0) {
+      return res.status(400).json({ error: 'This sale has already been returned' });
+    }
+
+    // Generate return receipt number
+    const returnReceiptNumber = `R${Date.now()}`;
+
+    // Process the return
+    const result = await executeTransaction(async (connection) => {
+      // Create return sale record
+      const [returnSaleResult] = await connection.execute(
+        `INSERT INTO sales (receipt_number, items, total, payment_method, customer_info, cashier_name, timestamp, type, original_sale_id, is_return) 
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), 'return', ?, true)`,
+        [
+          returnReceiptNumber,
+          JSON.stringify(sale.items),
+          -sale.total, // Negative total for return
+          sale.payment_method,
+          JSON.stringify(sale.customer_info),
+          req.user?.name || req.user?.username,
+          originalSaleId
+        ]
+      );
+
+      const returnSaleId = returnSaleResult.insertId;
+
+      // Update inventory for returned items
+      for (const item of sale.items) {
+        await connection.execute(
+          'UPDATE inventory SET stock = stock + ? WHERE id = ?',
+          [item.quantity, item.id]
+        );
+
+        // Record stock movement
+        await connection.execute(
+          `INSERT INTO stock_movements (item_id, movement_type, quantity_change, previous_stock, new_stock, reference_type, reference_id, notes, created_by) 
+           VALUES (?, 'return', ?, (SELECT stock FROM inventory WHERE id = ?) - ?, (SELECT stock FROM inventory WHERE id = ?), 'return', ?, 'Sales return', ?)`,
+          [item.id, item.quantity, item.id, item.quantity, item.id, returnSaleId, req.user?.id || 1]
+        );
+      }
+
+      // Update original sale return status
+      await connection.execute(
+        'UPDATE sales SET return_status = "full" WHERE id = ?',
+        [originalSaleId]
+      );
+
+      return returnSaleId;
+    });
+
+    // Get the created return sale
+    const returnSale = await executeQuery('SELECT * FROM sales WHERE id = ?', [result]);
+
+    res.json({
+      success: true,
+      returnSale: returnSale[0],
+      message: 'Return processed successfully'
+    });
+
+  } catch (error) {
+    console.error('Process return error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 export default router;

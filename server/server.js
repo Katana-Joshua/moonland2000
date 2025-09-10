@@ -14,6 +14,11 @@ import posRoutes from './routes/pos.js';
 import accountingRoutes from './routes/accounting.js';
 import uploadRoutes from './routes/upload.js';
 import brandingRoutes from './routes/branding.js';
+import currencyRoutes from './routes/currency.js';
+import suppliersRoutes from './routes/suppliers.js';
+import purchaseOrdersRoutes from './routes/purchaseOrders.js';
+import stockMovementsRoutes from './routes/stockMovements.js';
+import receiptTemplatesRoutes from './routes/receiptTemplates.js';
 
 // Load environment variables
 dotenv.config();
@@ -242,6 +247,11 @@ app.use('/api/pos', posRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/branding', brandingRoutes);
+app.use('/api/currency', currencyRoutes);
+app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/purchase-orders', purchaseOrdersRoutes);
+app.use('/api/stock-movements', stockMovementsRoutes);
+app.use('/api/receipt-templates', receiptTemplatesRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
