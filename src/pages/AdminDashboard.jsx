@@ -22,7 +22,7 @@ import {
   Printer,
   ClipboardCheck,
   MessageSquare,
-  UserSearch,
+  UserCheck,
   Settings2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -131,7 +131,7 @@ const AdminDashboard = () => {
     { id: 'stock-control', label: 'Stock Control', icon: ClipboardCheck },
     { id: 'purchases', label: 'Purchases', icon: ShoppingBasket },
     { id: 'staff', label: 'Staff', icon: Users },
-    { id: 'cashier-transactions', label: 'Cashier Reports', icon: UserSearch },
+    { id: 'cashier-transactions', label: 'Cashier Reports', icon: UserCheck },
     { id: 'reprint-terminal', label: 'Reprint Receipts', icon: Printer },
     { id: 'transactions', label: 'Transactions', icon: History },
     { id: 'reports', label: 'Sales Reports', icon: FileText },

@@ -278,8 +278,13 @@ const startServer = async () => {
     // Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.error('❌ Failed to connect to database. Server will not start.');
-      process.exit(1);
+      console.warn('⚠️  Database connection failed, but starting server anyway for development...');
+      console.warn('⚠️  Some features may not work without database connection.');
+      console.warn('💡 To fix database connection:');
+      console.warn('   1. Check if MySQL server is running on Hostinger');
+      console.warn('   2. Verify remote connections are enabled in Hostinger control panel');
+      console.warn('   3. Check firewall settings');
+      console.warn('   4. Verify database credentials in .env file');
     }
 
     app.listen(PORT, () => {
