@@ -5,30 +5,44 @@ import { usePOS } from '@/contexts/POSContext.jsx';
 import InventoryItemCard from './InventoryItemCard';
 import InventoryForm from './InventoryForm';
 
-const InventoryList = ({ searchTerm = '' }) => {
-  const { inventory, updateInventoryItem, deleteInventoryItem } = usePOS();
+const InventoryList = ({ inventory, onEdit, onDelete, searchTerm = '' }) => {
+  const { inventory: contextInventory } = usePOS();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
+  // Use passed inventory or fall back to context inventory
+  const inventoryToUse = inventory || contextInventory;
+
   const handleEdit = (item) => {
-    setEditingItem(item);
-    setIsEditDialogOpen(true);
+    if (onEdit) {
+      onEdit(item);
+    } else {
+      setEditingItem(item);
+      setIsEditDialogOpen(true);
+    }
   };
 
   const handleUpdate = (formData) => {
+    // This will only be used if onEdit is not provided
+    const { updateInventoryItem } = usePOS();
     updateInventoryItem(editingItem.id, formData);
     setIsEditDialogOpen(false);
     setEditingItem(null);
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      deleteInventoryItem(id);
+    if (onDelete) {
+      onDelete(id);
+    } else {
+      if (window.confirm('Are you sure you want to delete this item?')) {
+        const { deleteInventoryItem } = usePOS();
+        deleteInventoryItem(id);
+      }
     }
   };
 
-  // Filter inventory by search term
-  const filteredInventory = inventory.filter(item => {
+  // Filter inventory by search term if no filtered inventory is passed
+  const filteredInventory = inventory || inventoryToUse.filter(item => {
     const term = searchTerm.toLowerCase();
     return (
       item.name.toLowerCase().includes(term) ||
