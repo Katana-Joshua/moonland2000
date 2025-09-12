@@ -72,6 +72,7 @@ router.get('/images/:id', async (req, res) => {
     }
 
     if (result.data.length === 0) {
+      console.log(`No inventory item found with id: ${id}`);
       return res.status(404).json({
         success: false,
         message: 'Image not found'
@@ -80,11 +81,14 @@ router.get('/images/:id', async (req, res) => {
 
     const imageData = result.data[0].image_data;
     if (!imageData) {
+      console.log(`No image data found for inventory item: ${id}`);
       return res.status(404).json({
         success: false,
         message: 'No image data found'
       });
     }
+
+    console.log(`Serving image for item ${id}, data size: ${imageData.length} bytes`);
 
     // Detect image type (JPEG, PNG, GIF, WEBP)
     let contentType = 'image/jpeg';
@@ -117,12 +121,14 @@ router.get('/category-images/:id', async (req, res) => {
       SELECT image_data FROM categories WHERE id = ?
     `, [id]);
     if (!result.success || result.data.length === 0 || !result.data[0].image_data) {
+      console.log(`No category image found for id: ${id}`);
       return res.status(404).json({
         success: false,
         message: 'Category image not found'
       });
     }
     const imageData = result.data[0].image_data;
+    console.log(`Serving category image for id ${id}, data size: ${imageData.length} bytes`);
     // Detect image type
     let contentType = 'image/jpeg';
     if (imageData[0] === 0x89 && imageData[1] === 0x50 && imageData[2] === 0x4E && imageData[3] === 0x47) {
@@ -263,6 +269,9 @@ router.post('/inventory', upload.single('image'), optimizeImage, [
     console.log('Add inventory params:', params);
 
     console.log('📊 Inserting inventory with image data size:', imageData ? imageData.length : 0, 'bytes');
+    if (imageData) {
+      console.log('📊 Image data preview (first 20 bytes):', Array.from(imageData.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+    }
     
     const result = await executeQuery(`
       INSERT INTO inventory (id, name, description, price, cost_price, min_price, stock, low_stock_alert, category_id, image_data) 
@@ -384,6 +393,9 @@ router.put('/inventory/:id', upload.single('image'), optimizeImage, [
     }
 
     console.log('📊 Updating inventory with image data size:', imageData ? imageData.length : 0, 'bytes');
+    if (imageData) {
+      console.log('📊 Image data preview (first 20 bytes):', Array.from(imageData.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+    }
     console.log('Update inventory params:', params);
 
     const result = await executeQuery(query, params);
